@@ -15,7 +15,7 @@ class PowerShellCommand {
     }
 
     fun listInstalledPackages(): List<Package> {
-        val output = executeCommand("winget list")
+        val output = executeCommand("winget list --disable-interactivity")
         println("Raw Output: $output")
         return parseWingetList(output)
     }
@@ -26,13 +26,32 @@ class PowerShellCommand {
             .filter { it.isNotBlank() }
             .mapNotNull { line ->
                 val parts = line.split(Regex("\\s{2,}"))
+
                 if (parts.size >= 3) {
-                    Package(
-                        id = parts[0].trim(),
-                        name = parts[1].trim(),
-                        version = parts[2].trim()
-                    )
-                } else null
+                    val name = parts[0].trim()
+                    val idAndVersion = parts[1].trim()
+                    val version = parts[2].trim()
+
+                    if (idAndVersion.last().isDigit() && version.isEmpty()) {
+                        val lastSpaceIndex = idAndVersion.indexOfLast { it.isWhitespace() }
+                        val extractedVersion = idAndVersion.substring(lastSpaceIndex + 1).trim()
+                        val extractedId = idAndVersion.substring(0, lastSpaceIndex).trim()
+
+                        Package(
+                            name = name,
+                            id = extractedId,
+                            version = extractedVersion
+                        )
+                    } else {
+                        Package(
+                            name = name,
+                            id = idAndVersion,
+                            version = version
+                        )
+                    }
+                } else {
+                    null
+                }
             }
     }
 
