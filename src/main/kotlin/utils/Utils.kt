@@ -22,8 +22,12 @@ class PowerShellCommand {
 
     private fun parseWingetList(output: String): List<Package> {
         return output.lines()
-            .drop(2)
-            .filter { it.isNotBlank() }
+            .drop(8)
+            .filter {
+                it.isNotBlank() &&
+                !it.contains("Loading", ignoreCase = true) &&
+                        !it.contains("Retrieving", ignoreCase = true)
+            }
             .mapNotNull { line ->
                 val parts = line.split(Regex("\\s{2,}"))
 
