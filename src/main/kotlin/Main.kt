@@ -1,6 +1,5 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -164,29 +163,43 @@ fun PackageCard(pkg: model.Package) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = pkg.name,
-                    style = MaterialTheme.typography.body2,
-                    modifier = Modifier.weight(1f),
-                    fontFamily = bodyFont,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = pkg.version,
-                    style = MaterialTheme.typography.subtitle2,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End,
-                    fontFamily = bodyFont
-                )
-            }
+                Column {
+                    Text(
+                        text = pkg.name,
+                        style = MaterialTheme.typography.body2,
+                        fontFamily = bodyFont,
+                        fontWeight = FontWeight.SemiBold
+                    )
 
-            Text(
-                text = "ID: ${pkg.id}",
-                style = MaterialTheme.typography.caption,
-                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(top = 4.dp),
-                fontFamily = bodyFont
-            )
+                    Text(
+                        text = "ID: ${pkg.id}",
+                        style = MaterialTheme.typography.caption,
+                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 4.dp),
+                        fontFamily = bodyFont
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Column {
+                    Text(
+                        text = pkg.version,
+                        style = MaterialTheme.typography.subtitle2,
+                        textAlign = TextAlign.End,
+                        fontFamily = bodyFont
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = pkg.availableVersion ?: "",
+                        style = MaterialTheme.typography.subtitle2,
+                        textAlign = TextAlign.End,
+                        fontFamily = bodyFont
+                    )
+                }
+            }
         }
     }
 
@@ -213,7 +226,7 @@ private fun refreshPackages(
 }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "Package Manager") {
+    Window(onCloseRequest = ::exitApplication, title = "Package Manager", resizable = false) {
         App()
     }
 }

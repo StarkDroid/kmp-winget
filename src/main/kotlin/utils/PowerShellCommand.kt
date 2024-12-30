@@ -31,6 +31,14 @@ class PowerShellCommand {
                     val name = parts[0].trim()
                     val idAndVersion = parts[1].trim()
                     val version = parts[2].trim()
+                    var availableVersion : String? = null
+
+                    if (parts.size > 3) {
+                        val potentialAvailable = parts[3].trim()
+                        if (!potentialAvailable.equals("winget", ignoreCase = true)) {
+                            availableVersion = potentialAvailable
+                        }
+                    }
 
                     if (idAndVersion.last().isDigit() && version.isEmpty()) {
                         val lastSpaceIndex = idAndVersion.indexOfLast { it.isWhitespace() }
@@ -40,13 +48,15 @@ class PowerShellCommand {
                         Package(
                             name = name,
                             id = extractedId,
-                            version = extractedVersion
+                            version = extractedVersion,
+                            availableVersion = availableVersion
                         )
                     } else {
                         Package(
                             name = name,
                             id = idAndVersion,
-                            version = version
+                            version = version,
+                            availableVersion = availableVersion
                         )
                     }
                 } else {
