@@ -29,9 +29,14 @@ compose.desktop {
         mainClass = "MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Msi)
             packageName = "kmp-winget"
             packageVersion = "1.0.0"
+            description = "Compose Multiplatform based windows app for winget GUI package manager"
+            copyright = "© 2024 Trishiraj. All rights reserved."
+//            windows {
+//                iconFile.set(project.file(".ico"))
+//            }
         }
     }
 }
