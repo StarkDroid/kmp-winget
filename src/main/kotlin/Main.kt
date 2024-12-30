@@ -221,6 +221,14 @@ private fun refreshPackages(
             setLoading(true)
             val packages = withContext(Dispatchers.IO) {
                 powerShell.listInstalledPackages()
+            }.map { pkg ->
+                pkg.copy(
+                    version = pkg.version.takeIf { it != "Unknown" && it != "winget" } ?: "",
+                    availableVersion = pkg.availableVersion
+                        ?.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
+                        ?.trim()
+                        ?: ""
+                )
             }
             onPackagesLoaded(packages)
         } catch (e: Exception) {

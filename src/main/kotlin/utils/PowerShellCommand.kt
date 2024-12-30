@@ -35,9 +35,7 @@ class PowerShellCommand {
 
                     if (parts.size > 3) {
                         val potentialAvailable = parts[3].trim()
-                        if (!potentialAvailable.equals("winget", ignoreCase = true)) {
-                            availableVersion = potentialAvailable
-                        }
+                        availableVersion = potentialAvailable
                     }
 
                     if (idAndVersion.last().isDigit() && version.isEmpty()) {
