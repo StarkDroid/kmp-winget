@@ -1,15 +1,18 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -79,8 +82,7 @@ fun App() {
                     enabled = !isLoading,
                 ) {
                     Card(
-                        modifier = Modifier
-                            .size(32.dp),
+                        modifier = Modifier.size(32.dp),
                         elevation = 4.dp,
                         shape = CircleShape,
                         backgroundColor = MaterialTheme.colors.surface,
@@ -136,12 +138,14 @@ fun App() {
                     )
                 }
 
-                Divider(color = MaterialTheme.colors.onBackground.copy(alpha = 0.2f))
+                Divider(
+                    color = MaterialTheme.colors.onBackground.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(vertical = 8.dp)
                 ) {
                     items(packages) { pkg ->
                         PackageCard(pkg)
@@ -157,13 +161,15 @@ fun PackageCard(pkg: model.Package) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.LightGray.copy(0.2f), shape = RoundedCornerShape(4.dp)),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Column(modifier = Modifier.padding(start = 12.dp)) {
                     Text(
                         text = pkg.name,
                         style = MaterialTheme.typography.body2,
@@ -182,7 +188,7 @@ fun PackageCard(pkg: model.Package) {
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                Column {
+                Column(modifier = Modifier.padding(end = 12.dp)) {
                     Text(
                         text = pkg.version,
                         style = MaterialTheme.typography.subtitle2,
@@ -196,7 +202,8 @@ fun PackageCard(pkg: model.Package) {
                         text = pkg.availableVersion ?: "",
                         style = MaterialTheme.typography.subtitle2,
                         textAlign = TextAlign.End,
-                        fontFamily = bodyFont
+                        fontFamily = bodyFont,
+                        color = Color.Green
                     )
                 }
             }
