@@ -1,14 +1,21 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +23,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import utils.PowerShellCommand
+import utils.bodyFont
+import utils.headingFont
 
 @Composable
 @Preview
@@ -43,10 +52,50 @@ fun App() {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            Text(
-                "Package Manager",
-                style = MaterialTheme.typography.h3
-            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Package Manager",
+                    fontFamily = headingFont,
+                    style = MaterialTheme.typography.h6,
+                    fontSize = 21.sp
+                )
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                IconButton(
+                    onClick = {
+                        errorMessage = null
+                        refreshPackages(
+                            scope = scope,
+                            powerShell = powerShell,
+                            onPackagesLoaded = { result ->
+                                packages = result
+                            },
+                            setLoading = { isLoading = it }
+                        )
+                    },
+                    enabled = !isLoading,
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .size(32.dp),
+                        elevation = 4.dp,
+                        shape = CircleShape,
+                        backgroundColor = MaterialTheme.colors.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colors.onBackground.copy(alpha = 0.2f))
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(24.dp).padding(8.dp),
+                            imageVector = Icons.TwoTone.Refresh,
+                            contentDescription = "Refresh",
+                            tint = MaterialTheme.colors.onBackground
+                        )
+                    }
+                }
+            }
 
             errorMessage?.let {
                 Text(
@@ -54,24 +103,6 @@ fun App() {
                     color = MaterialTheme.colors.error,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
-            }
-
-            Button(
-                onClick = {
-                    errorMessage = null
-                    refreshPackages(
-                        scope = scope,
-                        powerShell = powerShell,
-                        onPackagesLoaded = { result ->
-                            packages = result
-                        },
-                        setLoading = { isLoading = it }
-                    )
-                },
-                enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Refresh Package List")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -91,16 +122,23 @@ fun App() {
                 ) {
                     Text(
                         text = "Name",
-                        style = MaterialTheme.typography.h6,
-                        modifier = Modifier.weight(1f)
+                        style = MaterialTheme.typography.subtitle2,
+                        modifier = Modifier.weight(1f),
+                        fontFamily = bodyFont,
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = "Version",
                         style = MaterialTheme.typography.subtitle2,
                         modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.End
+                        textAlign = TextAlign.End,
+                        fontFamily = bodyFont,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
+
+                Divider(color = MaterialTheme.colors.onBackground.copy(alpha = 0.2f))
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -128,22 +166,26 @@ fun PackageCard(pkg: model.Package) {
             ) {
                 Text(
                     text = pkg.name,
-                    style = MaterialTheme.typography.h6,
-                    modifier = Modifier.weight(1f)
+                    style = MaterialTheme.typography.body2,
+                    modifier = Modifier.weight(1f),
+                    fontFamily = bodyFont,
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Version: ${pkg.version}",
+                    text = pkg.version,
                     style = MaterialTheme.typography.subtitle2,
                     modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End
+                    textAlign = TextAlign.End,
+                    fontFamily = bodyFont
                 )
             }
 
             Text(
                 text = "ID: ${pkg.id}",
-                style = MaterialTheme.typography.body2,
+                style = MaterialTheme.typography.caption,
                 color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 4.dp),
+                fontFamily = bodyFont
             )
         }
     }
