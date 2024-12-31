@@ -21,16 +21,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import theme.AppTheme
 import theme.ThemeState
 import ui.DynamicIconButton
-import utils.PowerShellCommand
 import utils.bodyFont
 import utils.headingFont
+import utils.refreshPackages
 
 @Composable
 @Preview
@@ -41,13 +37,11 @@ fun App() {
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
-    val powerShell = remember { PowerShellCommand() }
 
     val isDarkMode = ThemeState.isDarkMode.value
 
     refreshPackages(
         scope = scope,
-        powerShell = powerShell,
         onPackagesLoaded = { result ->
             packages = result
         },
@@ -84,7 +78,6 @@ fun App() {
                         errorMessage = null
                         refreshPackages(
                             scope = scope,
-                            powerShell = powerShell,
                             onPackagesLoaded = { result ->
                                 packages = result
                             },
@@ -241,36 +234,6 @@ fun PackageCard(pkg: model.Package) {
                     color = Color.Green
                 )
             }
-        }
-    }
-}
-
-private fun refreshPackages(
-    scope: CoroutineScope,
-    powerShell: PowerShellCommand,
-    onPackagesLoaded: (List<model.Package>) -> Unit,
-    setLoading: (Boolean) -> Unit
-) {
-    scope.launch {
-        try {
-            setLoading(true)
-            val packages = withContext(Dispatchers.IO) {
-                powerShell.listInstalledPackages()
-            }.map { pkg ->
-                pkg.copy(
-                    version = pkg.version.takeIf { it != "Unknown" && it != "winget" } ?: "",
-                    availableVersion = pkg.availableVersion
-                        ?.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
-                        ?.trim()
-                        ?: ""
-                )
-            }
-            onPackagesLoaded(packages)
-        } catch (e: Exception) {
-            println("Error loading packages: ${e.message}")
-            onPackagesLoaded(emptyList())
-        } finally {
-            setLoading(false)
         }
     }
 }
