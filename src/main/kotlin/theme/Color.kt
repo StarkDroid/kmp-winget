@@ -20,12 +20,12 @@ object AppColors {
     val Dark = ColorScheme(
         primary = Color(0xFF2E236C),
         secondary = Color(0xFFC8ACD6),
-        background = Color(0xFF433D8B),
+        background = Color(0xFF9AA6B2),
         surface = Color(0xFF222831),
         error = Color(0xFFCF6679),
         onPrimary = Color(0xFF000000),
         onSecondary = Color(0xFF000000),
-        onBackground = Color(0xFFFFFFFF),
+        onBackground = Color(0xFF000000),
         onSurface = Color(0xFFFFFFFF),
         onError = Color(0xFF000000),
     )
