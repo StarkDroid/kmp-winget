@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun DynamicIconButton(
+    modifier: Modifier = Modifier,
     onClickAction: () -> Unit,
     isEnabled: Boolean = true,
     iconImage: ImageVector,
@@ -24,14 +25,14 @@ fun DynamicIconButton(
     backgroundColor: Color = MaterialTheme.colors.surface,
     borderColor: Color = MaterialTheme.colors.onBackground.copy(alpha = 0.2f),
     elevation: Dp = 4.dp,
-    contentDescription: String = "Refresh button"
+    contentDescription: String = "Refresh button",
 ) {
     IconButton(
         onClick = onClickAction,
         enabled = isEnabled,
     ) {
         Card(
-            modifier = Modifier.size(buttonBackgroundSize),
+            modifier = modifier,
             elevation = elevation,
             shape = CircleShape,
             backgroundColor = backgroundColor,

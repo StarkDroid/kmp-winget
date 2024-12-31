@@ -1,13 +1,12 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Download
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ui.DynamicIconButton
 import utils.PowerShellCommand
 import utils.bodyFont
 import utils.headingFont
@@ -67,8 +67,9 @@ fun App() {
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                IconButton(
-                    onClick = {
+                DynamicIconButton(
+                    modifier = Modifier.size(36.dp),
+                    onClickAction = {
                         errorMessage = null
                         refreshPackages(
                             scope = scope,
@@ -79,23 +80,10 @@ fun App() {
                             setLoading = { isLoading = it }
                         )
                     },
-                    enabled = !isLoading,
-                ) {
-                    Card(
-                        modifier = Modifier.size(32.dp),
-                        elevation = 4.dp,
-                        shape = CircleShape,
-                        backgroundColor = MaterialTheme.colors.surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colors.onBackground.copy(alpha = 0.2f))
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(24.dp).padding(8.dp),
-                            imageVector = Icons.TwoTone.Refresh,
-                            contentDescription = "Refresh",
-                            tint = MaterialTheme.colors.onBackground
-                        )
-                    }
-                }
+                    isEnabled = !isLoading,
+                    iconImage = Icons.TwoTone.Refresh,
+                    iconSize = 18.dp
+                )
             }
 
             errorMessage?.let {
@@ -112,7 +100,8 @@ fun App() {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     strokeCap = StrokeCap.Round,
-                    strokeWidth = 6.dp
+                    strokeWidth = 6.dp,
+                    color = MaterialTheme.colors.onSurface
                 )
             } else {
                 Row(
@@ -187,6 +176,18 @@ fun PackageCard(pkg: model.Package) {
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
+
+                if (!pkg.availableVersion.isNullOrBlank()) {
+                    DynamicIconButton(
+                        modifier = Modifier
+                            .size(32.dp),
+                        onClickAction = {
+                            println("Upgrade button clicked for ${pkg.name}")
+                        },
+                        iconImage = Icons.TwoTone.Download,
+                        iconSize = 18.dp
+                    )
+                }
 
                 Column(modifier = Modifier.padding(end = 12.dp)) {
                     Text(
