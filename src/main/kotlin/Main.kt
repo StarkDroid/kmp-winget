@@ -52,22 +52,25 @@ fun App() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .background(color = MaterialTheme.colors.surface)
         ) {
 
             Row(
+                modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "Package Manager",
                     fontFamily = headingFont,
                     style = MaterialTheme.typography.h6,
-                    fontSize = 21.sp
+                    color = MaterialTheme.colors.onSurface,
+                    fontSize = 21.sp,
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
                 DynamicIconButton(
+                    backgroundColor = MaterialTheme.colors.background,
                     modifier = Modifier.size(36.dp),
                     onClickAction = {
                         errorMessage = null
@@ -82,7 +85,8 @@ fun App() {
                     },
                     isEnabled = !isLoading,
                     iconImage = Icons.TwoTone.Refresh,
-                    iconSize = 18.dp
+                    iconSize = 18.dp,
+                    iconTint = MaterialTheme.colors.secondary
                 )
             }
 
@@ -113,6 +117,7 @@ fun App() {
                     Text(
                         text = "Name",
                         style = MaterialTheme.typography.subtitle2,
+                        color = MaterialTheme.colors.onSurface,
                         modifier = Modifier.weight(1f),
                         fontFamily = bodyFont,
                         fontWeight = FontWeight.SemiBold
@@ -120,15 +125,16 @@ fun App() {
                     Text(
                         text = "Version",
                         style = MaterialTheme.typography.subtitle2,
+                        color = MaterialTheme.colors.onSurface,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.End,
                         fontFamily = bodyFont,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
 
                 Divider(
-                    color = MaterialTheme.colors.onBackground.copy(alpha = 0.2f),
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.2f),
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
@@ -147,69 +153,73 @@ fun App() {
 
 @Composable
 fun PackageCard(pkg: model.Package) {
-        Column(
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .background(Color.LightGray.copy(0.2f), shape = RoundedCornerShape(4.dp)),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.LightGray.copy(0.2f), shape = RoundedCornerShape(4.dp)),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text(
-                        text = pkg.name,
-                        style = MaterialTheme.typography.body2,
-                        fontFamily = bodyFont,
-                        fontWeight = FontWeight.SemiBold
-                    )
+            Column(modifier = Modifier.padding(start = 12.dp)) {
+                Text(
+                    text = pkg.name,
+                    style = MaterialTheme.typography.body2,
+                    color = MaterialTheme.colors.onSurface,
+                    fontFamily = bodyFont,
+                    fontWeight = FontWeight.SemiBold,
+                )
 
-                    Text(
-                        text = "ID: ${pkg.id}",
-                        style = MaterialTheme.typography.caption,
-                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(top = 4.dp),
-                        fontFamily = bodyFont
-                    )
-                }
+                Text(
+                    text = "ID: ${pkg.id}",
+                    style = MaterialTheme.typography.caption,
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontFamily = bodyFont,
+                )
+            }
 
-                Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
 
-                if (!pkg.availableVersion.isNullOrBlank()) {
-                    DynamicIconButton(
-                        modifier = Modifier
-                            .size(32.dp),
-                        onClickAction = {
-                            println("Upgrade button clicked for ${pkg.name}")
-                        },
-                        iconImage = Icons.TwoTone.Download,
-                        iconSize = 18.dp
-                    )
-                }
+            if (!pkg.availableVersion.isNullOrBlank()) {
+                DynamicIconButton(
+                    backgroundColor = MaterialTheme.colors.background,
+                    modifier = Modifier
+                        .size(32.dp),
+                    onClickAction = {
+                        println("Upgrade button clicked for ${pkg.name}")
+                    },
+                    iconImage = Icons.TwoTone.Download,
+                    iconSize = 18.dp,
+                    iconTint = MaterialTheme.colors.secondary
+                )
+            }
 
-                Column(modifier = Modifier.padding(end = 12.dp)) {
-                    Text(
-                        text = pkg.version,
-                        style = MaterialTheme.typography.subtitle2,
-                        textAlign = TextAlign.End,
-                        fontFamily = bodyFont
-                    )
+            Column(modifier = Modifier.padding(end = 12.dp)) {
+                Text(
+                    text = pkg.version,
+                    style = MaterialTheme.typography.subtitle2,
+                    textAlign = TextAlign.End,
+                    fontFamily = bodyFont,
+                    color = MaterialTheme.colors.onSurface
+                )
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-                    Text(
-                        text = pkg.availableVersion ?: "",
-                        style = MaterialTheme.typography.subtitle2,
-                        textAlign = TextAlign.End,
-                        fontFamily = bodyFont,
-                        color = Color.Green
-                    )
-                }
+                Text(
+                    text = pkg.availableVersion ?: "",
+                    style = MaterialTheme.typography.subtitle2,
+                    textAlign = TextAlign.End,
+                    fontFamily = bodyFont,
+                    color = Color.Green
+                )
             }
         }
     }
+}
 
 private fun refreshPackages(
     scope: CoroutineScope,
