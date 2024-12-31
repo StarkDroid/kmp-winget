@@ -7,7 +7,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Download
+import androidx.compose.material.icons.twotone.ModeNight
 import androidx.compose.material.icons.twotone.Refresh
+import androidx.compose.material.icons.twotone.WbSunny
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +25,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import theme.AppTheme
+import theme.ThemeState
 import ui.DynamicIconButton
 import utils.PowerShellCommand
 import utils.bodyFont
@@ -39,6 +43,8 @@ fun App() {
     val scope = rememberCoroutineScope()
     val powerShell = remember { PowerShellCommand() }
 
+    val isDarkMode = ThemeState.isDarkMode.value
+
     refreshPackages(
         scope = scope,
         powerShell = powerShell,
@@ -48,7 +54,7 @@ fun App() {
         setLoading = { isLoading = it }
     )
 
-    MaterialTheme {
+    AppTheme {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -56,8 +62,10 @@ fun App() {
         ) {
 
             Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     "Package Manager",
@@ -86,7 +94,23 @@ fun App() {
                     isEnabled = !isLoading,
                     iconImage = Icons.TwoTone.Refresh,
                     iconSize = 18.dp,
-                    iconTint = MaterialTheme.colors.secondary
+                    iconTint = MaterialTheme.colors.onBackground,
+                    contentDescription = "Refresh packages"
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                DynamicIconButton(
+                    backgroundColor = MaterialTheme.colors.background,
+                    modifier = Modifier.size(36.dp),
+                    onClickAction = {
+                        ThemeState.isDarkMode.value = !isDarkMode
+                    },
+                    isEnabled = !isLoading,
+                    iconImage = if (isDarkMode) Icons.TwoTone.WbSunny else Icons.TwoTone.ModeNight,
+                    iconSize = 18.dp,
+                    iconTint = MaterialTheme.colors.onBackground,
+                    contentDescription = "Switch theme"
                 )
             }
 
@@ -161,7 +185,7 @@ fun PackageCard(pkg: model.Package) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.LightGray.copy(0.2f), shape = RoundedCornerShape(4.dp)),
+                .background(MaterialTheme.colors.onBackground.copy(0.1f), shape = RoundedCornerShape(4.dp)),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.padding(start = 12.dp)) {
@@ -194,7 +218,7 @@ fun PackageCard(pkg: model.Package) {
                     },
                     iconImage = Icons.TwoTone.Download,
                     iconSize = 18.dp,
-                    iconTint = MaterialTheme.colors.secondary
+                    iconTint = MaterialTheme.colors.onBackground
                 )
             }
 
