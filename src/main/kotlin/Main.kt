@@ -5,7 +5,7 @@ import ui.MainScreen
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
-        title = "Package Manager",
+        title = "kmp-winget",
         resizable = false) {
         MainScreen()
     }
