@@ -69,11 +69,13 @@ private fun parseWingetList(output: String): List<Package> {
 
 fun upgradePackage(packageName: String): Boolean {
     try {
-        val command = "winget upgrade -q \"$packageName\" --accept-source-agreements --accept-package-agreements"
+        val escapedPackageName = packageName.replace("\"", "\\\"")
+        val command = "winget upgrade -q \"$escapedPackageName\" --accept-source-agreements --accept-package-agreements"
         val output = executeCommand(command)
         println("Upgrade Output for $packageName: $output")
 
-        return output.contains("Successfully installed") || output.contains("No applicable update found")
+        return output.contains("Successfully installed", ignoreCase = true) ||
+                output.contains("No applicable update found", ignoreCase = true)
     } catch (e: Exception) {
         println("Error upgrading package $packageName: ${e.message}")
         return false

@@ -5,20 +5,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.Download
 import androidx.compose.material.icons.twotone.ModeNight
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material.icons.twotone.WbSunny
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,7 +30,7 @@ import utils.performAction
 
 @Composable
 @Preview
-fun MainScren() {
+fun MainScreen() {
     var packages by remember { mutableStateOf<List<model.Package>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -164,7 +161,11 @@ fun MainScren() {
                         .fillMaxSize()
                 ) {
                     items(packages) { pkg ->
-                        PackageCard(pkg)
+                        TableRowLayout(
+                            pkg = pkg,
+                            scope = scope,
+                            setLoading = { isLoading = it },
+                        )
                     }
                 }
             }
@@ -174,70 +175,5 @@ fun MainScren() {
 
 @Composable
 fun PackageCard(pkg: model.Package) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colors.onBackground.copy(0.1f), shape = RoundedCornerShape(4.dp)),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.padding(start = 12.dp)) {
-                Text(
-                    text = pkg.name,
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onSurface,
-                    fontFamily = bodyFont,
-                    fontWeight = FontWeight.SemiBold,
-                )
 
-                Text(
-                    text = "ID: ${pkg.id}",
-                    style = MaterialTheme.typography.caption,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(top = 4.dp),
-                    fontFamily = bodyFont,
-                )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (!pkg.availableVersion.isNullOrBlank()) {
-                DynamicIconButton(
-                    backgroundColor = MaterialTheme.colors.background,
-                    modifier = Modifier
-                        .size(32.dp),
-                    onClickAction = {
-                        println("Upgrade button clicked for ${pkg.name}")
-                    },
-                    iconImage = Icons.TwoTone.Download,
-                    iconSize = 18.dp,
-                    iconTint = MaterialTheme.colors.onBackground
-                )
-            }
-
-            Column(modifier = Modifier.padding(end = 12.dp)) {
-                Text(
-                    text = pkg.version,
-                    style = MaterialTheme.typography.subtitle2,
-                    textAlign = TextAlign.End,
-                    fontFamily = bodyFont,
-                    color = MaterialTheme.colors.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = pkg.availableVersion ?: "",
-                    style = MaterialTheme.typography.subtitle2,
-                    textAlign = TextAlign.End,
-                    fontFamily = bodyFont,
-                    color = Color.Green
-                )
-            }
-        }
-    }
 }
