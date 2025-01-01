@@ -24,11 +24,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import model.PerformAction
 import theme.AppTheme
 import theme.ThemeState
 import utils.bodyFont
 import utils.headingFont
-import utils.refreshPackages
+import utils.performAction
 
 @Composable
 @Preview
@@ -41,12 +42,13 @@ fun MainScren() {
 
     val isDarkMode = ThemeState.isDarkMode.value
 
-    refreshPackages(
+    performAction(
         scope = scope,
         onPackagesLoaded = { result ->
             packages = result
         },
-        setLoading = { isLoading = it }
+        setLoading = { isLoading = it },
+        action = PerformAction.RefreshList
     )
 
     AppTheme {
@@ -77,12 +79,13 @@ fun MainScren() {
                     modifier = Modifier.size(36.dp),
                     onClickAction = {
                         errorMessage = null
-                        refreshPackages(
+                        performAction(
                             scope = scope,
                             onPackagesLoaded = { result ->
                                 packages = result
                             },
-                            setLoading = { isLoading = it }
+                            setLoading = { isLoading = it },
+                            action = PerformAction.RefreshList
                         )
                     },
                     isEnabled = !isLoading,

@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import model.Package
+import model.PerformAction
 
 private fun executeCommand(command: String): String {
     println("Executing $command")
@@ -66,29 +67,58 @@ private fun parseWingetList(output: String): List<Package> {
         }
 }
 
-fun refreshPackages(
+fun upgradePackage(packageName: String): Boolean {
+    try {
+        val command = "winget upgrade -q \"$packageName\" --accept-source-agreements --accept-package-agreements"
+        val output = executeCommand(command)
+        println("Upgrade Output for $packageName: $output")
+
+        return output.contains("Successfully installed") || output.contains("No applicable update found")
+    } catch (e: Exception) {
+        println("Error upgrading package $packageName: ${e.message}")
+        return false
+    }
+}
+
+fun performAction(
     scope: CoroutineScope,
-    onPackagesLoaded: (List<model.Package>) -> Unit,
-    setLoading: (Boolean) -> Unit
+    onPackagesLoaded: (List<Package>) -> Unit,
+    setLoading: (Boolean) -> Unit,
+    action: PerformAction = PerformAction.RefreshList,
+    onActionComplete: ((Boolean) -> Unit)? = null
 ) {
     scope.launch {
         try {
             setLoading(true)
-            val packages = withContext(Dispatchers.IO) {
-                listInstalledPackages()
-            }.map { pkg ->
-                pkg.copy(
-                    version = pkg.version.takeIf { it != "Unknown" && it != "winget" } ?: "",
-                    availableVersion = pkg.availableVersion
-                        ?.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
-                        ?.trim()
-                        ?: ""
-                )
+            when(action) {
+                is PerformAction.RefreshList -> {
+                    val packages = withContext(Dispatchers.IO) {
+                        listInstalledPackages()
+                    }.map { pkg ->
+                        pkg.copy(
+                            version = pkg.version.takeIf { it != "Unknown" && it != "winget" } ?: "",
+                            availableVersion = pkg.availableVersion
+                                ?.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
+                                ?.trim()
+                                ?: ""
+                        )
+                    }
+                    onPackagesLoaded(packages)
+                }
+
+                is PerformAction.UpgradePackage -> {
+                    val upgradeResult = withContext(Dispatchers.IO) {
+                        upgradePackage(action.packageName)
+                    }
+                    onActionComplete?.invoke(upgradeResult)
+                }
             }
-            onPackagesLoaded(packages)
         } catch (e: Exception) {
             println("Error loading packages: ${e.message}")
-            onPackagesLoaded(emptyList())
+            when (action) {
+                is PerformAction.RefreshList -> onPackagesLoaded(emptyList())
+                else -> onActionComplete?.invoke(false)
+            }
         } finally {
             setLoading(false)
         }
