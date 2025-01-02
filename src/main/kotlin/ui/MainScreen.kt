@@ -27,10 +27,15 @@ import utils.performAction
 fun MainScreen() {
     var packages by remember { mutableStateOf<List<model.Package>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
-
     val isDarkMode = ThemeState.isDarkMode.value
+
+    val filteredPackages = packages.filter {
+        it.name.contains(searchQuery, ignoreCase = true) ||
+                it.id.contains(searchQuery, ignoreCase = true)
+    }
 
     performAction(
         scope = scope,
@@ -59,6 +64,13 @@ fun MainScreen() {
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { query ->
+                    searchQuery = query
+                }
+            )
 
             if (isLoading) {
                 CircularProgressIndicator(
@@ -102,7 +114,7 @@ fun MainScreen() {
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    items(packages) { pkg ->
+                    items(filteredPackages) { pkg ->
                         TableRowLayout(
                             pkg = pkg,
                             scope = scope,
