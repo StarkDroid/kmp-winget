@@ -18,8 +18,14 @@ private fun executeCommand(command: String): String {
     }
 }
 
-private fun listInstalledPackages(): List<Package> {
-    val output = executeCommand("winget list --disable-interactivity")
+private fun listInstalledPackages(showUpgradesOnly: Boolean): List<Package> {
+    val command = buildString {
+        append("winget list --disable-interactivity")
+        if (showUpgradesOnly) {
+            append(" --upgrade-available")
+        }
+    }
+    val output = executeCommand(command)
     println("Raw Output: $output")
     return parseWingetList(output)
 }
@@ -87,7 +93,8 @@ fun performAction(
     onPackagesLoaded: (List<Package>) -> Unit,
     setLoading: (Boolean) -> Unit,
     action: PerformAction = PerformAction.RefreshList,
-    onActionComplete: ((Boolean) -> Unit)? = null
+    onActionComplete: ((Boolean) -> Unit)? = null,
+    showUpgradesOnly: Boolean = false
 ) {
     scope.launch {
         try {
@@ -95,7 +102,7 @@ fun performAction(
             when(action) {
                 is PerformAction.RefreshList -> {
                     val packages = withContext(Dispatchers.IO) {
-                        listInstalledPackages()
+                        listInstalledPackages(showUpgradesOnly)
                     }.map { pkg ->
                         pkg.copy(
                             version = pkg.version.takeIf { it != "Unknown" && it != "winget" } ?: "",

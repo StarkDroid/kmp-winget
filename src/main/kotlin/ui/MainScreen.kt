@@ -33,6 +33,7 @@ import utils.performAction
 @Composable
 @Preview
 fun MainScreen() {
+    var showUpgradesOnly by remember { mutableStateOf(false) }
     var packages by remember { mutableStateOf<List<model.Package>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -45,14 +46,21 @@ fun MainScreen() {
                 it.id.contains(searchQuery, ignoreCase = true)
     }
 
-    performAction(
-        scope = scope,
-        onPackagesLoaded = { result ->
-            packages = result
-        },
-        setLoading = { isLoading = it },
-        action = PerformAction.RefreshList
-    )
+    val refreshPackages = {
+        performAction(
+            scope = scope,
+            onPackagesLoaded = { result ->
+                packages = result
+            },
+            setLoading = { isLoading = it },
+            action = PerformAction.RefreshList,
+            showUpgradesOnly = showUpgradesOnly
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        refreshPackages()
+    }
 
     AppTheme {
         Box(
@@ -82,6 +90,11 @@ fun MainScreen() {
                     query = searchQuery,
                     onQueryChange = { query ->
                         searchQuery = query
+                    },
+                    showUpgradesOnly = showUpgradesOnly,
+                    onToggleChange = { isChecked ->
+                        showUpgradesOnly = isChecked
+                        refreshPackages()
                     }
                 )
 
@@ -150,8 +163,8 @@ fun MainScreen() {
                                 shape = RoundedCornerShape(4.dp),
                                 minimalHeight = 40.dp,
                                 thickness = 8.dp,
-                                unhoverColor = MaterialTheme.colors.onBackground.copy(0.5f),
-                                hoverColor = MaterialTheme.colors.onBackground,
+                                unhoverColor = MaterialTheme.colors.onSurface.copy(0.5f),
+                                hoverColor = MaterialTheme.colors.onSurface,
                                 hoverDurationMillis = 150
                             )
                         )

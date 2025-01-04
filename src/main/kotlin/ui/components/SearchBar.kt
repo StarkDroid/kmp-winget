@@ -1,8 +1,6 @@
 package ui.components
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -20,6 +18,8 @@ fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    showUpgradesOnly: Boolean,
+    onToggleChange: (Boolean) -> Unit
 ) {
     Box(
         modifier.fillMaxWidth(),
@@ -56,5 +56,20 @@ fun SearchBar(
                 cursorColor = MaterialTheme.colors.onSurface
             )
         )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Row {
+            Text(
+                text = "Show upgrades only",
+                style = MaterialTheme.typography.body2,
+                color = MaterialTheme.colors.onSurface,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Switch(
+                checked = showUpgradesOnly,
+                onCheckedChange = onToggleChange,
+            )
+        }
     }
 }
