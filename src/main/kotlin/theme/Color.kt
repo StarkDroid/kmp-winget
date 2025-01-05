@@ -29,4 +29,8 @@ object AppColors {
         onSurface = Color(0xFFFFFFFF),
         onError = Color(0xFF000000),
     )
+
+    // Define Custom Colors
+    val darkSwitchCheckedTrackColor = Color(0xFF16C47F)
+    val lightSwitchCheckedTrackColor = Color(0xFF54C392)
 }
