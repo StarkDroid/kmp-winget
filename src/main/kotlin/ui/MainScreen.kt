@@ -28,6 +28,7 @@ import ui.components.AppHeader
 import ui.components.SearchBar
 import ui.components.TableRowLayout
 import utils.bodyFont
+import utils.loadString
 import utils.performAction
 
 @Composable
@@ -113,7 +114,7 @@ fun MainScreen() {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Name",
+                            text = loadString("table.column.name"),
                             style = MaterialTheme.typography.subtitle2,
                             color = MaterialTheme.colors.onSurface,
                             modifier = Modifier.weight(1f),
@@ -121,7 +122,7 @@ fun MainScreen() {
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = "Version",
+                            text = loadString("table.column.name"),
                             style = MaterialTheme.typography.subtitle2,
                             color = MaterialTheme.colors.onSurface,
                             modifier = Modifier.weight(1f),

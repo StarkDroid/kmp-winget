@@ -17,6 +17,7 @@ import model.Package
 import model.PerformAction
 import theme.ThemeState
 import utils.headingFont
+import utils.loadString
 import utils.performAction
 
 @Composable
@@ -34,7 +35,7 @@ fun AppHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "Package Manager",
+            loadString("app.name"),
             fontFamily = headingFont,
             style = MaterialTheme.typography.h6,
             color = MaterialTheme.colors.onSurface,
