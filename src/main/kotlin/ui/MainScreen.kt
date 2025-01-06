@@ -99,47 +99,47 @@ fun MainScreen() {
                     }
                 )
 
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        strokeCap = StrokeCap.Round,
-                        strokeWidth = 6.dp,
-                        color = MaterialTheme.colors.onSurface
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = loadString("table.column.name"),
+                        style = MaterialTheme.typography.subtitle2,
+                        color = MaterialTheme.colors.onSurface,
+                        modifier = Modifier.weight(1f),
+                        fontFamily = bodyFont,
+                        fontWeight = FontWeight.SemiBold
                     )
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = loadString("table.column.name"),
-                            style = MaterialTheme.typography.subtitle2,
-                            color = MaterialTheme.colors.onSurface,
-                            modifier = Modifier.weight(1f),
-                            fontFamily = bodyFont,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = loadString("table.column.version"),
-                            style = MaterialTheme.typography.subtitle2,
-                            color = MaterialTheme.colors.onSurface,
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.End,
-                            fontFamily = bodyFont,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-
-                    Divider(
-                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.2f),
-                        modifier = Modifier.padding(bottom = 16.dp)
+                    Text(
+                        text = loadString("table.column.version"),
+                        style = MaterialTheme.typography.subtitle2,
+                        color = MaterialTheme.colors.onSurface,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End,
+                        fontFamily = bodyFont,
+                        fontWeight = FontWeight.SemiBold,
                     )
+                }
 
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
+                Divider(
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            strokeCap = StrokeCap.Round,
+                            strokeWidth = 6.dp,
+                            color = MaterialTheme.colors.onSurface
+                        )
+                    } else {
                         LazyColumn(
                             state = listState,
                             modifier = Modifier
