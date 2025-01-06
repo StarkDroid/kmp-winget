@@ -33,4 +33,5 @@ object AppColors {
     // Define Custom Colors
     val darkSwitchCheckedTrackColor = Color(0xFF16C47F)
     val lightSwitchCheckedTrackColor = Color(0xFF54C392)
+    val diskManagerBackgroundColor = Color(0xFFffd65a)
 }

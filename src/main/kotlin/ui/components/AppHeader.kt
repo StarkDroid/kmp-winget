@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.ModeNight
-import androidx.compose.material.icons.twotone.Refresh
-import androidx.compose.material.icons.twotone.WbSunny
+import androidx.compose.material.icons.twotone.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,7 +13,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import model.Package
 import model.PerformAction
+import theme.AppColors
 import theme.ThemeState
+import utils.executeCommand
 import utils.headingFont
 import utils.loadString
 import utils.performAction
@@ -63,6 +63,19 @@ fun AppHeader(
         )
 
         Spacer(modifier = Modifier.weight(1f))
+
+        DynamicIconButton(
+            backgroundColor = AppColors.diskManagerBackgroundColor,
+            modifier = Modifier.size(36.dp),
+            onClickAction = {
+                executeCommand("cleanmgr")
+            },
+            isEnabled = !isLoading,
+            iconImage = Icons.TwoTone.CleaningServices,
+            iconSize = 18.dp,
+            iconTint = MaterialTheme.colors.onBackground,
+            contentDescription = "Open Disk Manager"
+        )
 
         DynamicIconButton(
             backgroundColor = MaterialTheme.colors.background,

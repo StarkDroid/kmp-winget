@@ -7,7 +7,7 @@ import kotlinx.coroutines.withContext
 import model.Package
 import model.PerformAction
 
-private fun executeCommand(command: String): String {
+fun executeCommand(command: String): String {
     println("Executing $command")
     val process = ProcessBuilder("powershell.exe", "-Command", command)
         .redirectErrorStream(true)
