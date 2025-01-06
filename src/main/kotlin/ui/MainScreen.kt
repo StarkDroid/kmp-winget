@@ -122,7 +122,7 @@ fun MainScreen() {
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = loadString("table.column.name"),
+                            text = loadString("table.column.version"),
                             style = MaterialTheme.typography.subtitle2,
                             color = MaterialTheme.colors.onSurface,
                             modifier = Modifier.weight(1f),

@@ -35,9 +35,9 @@ compose.desktop {
             packageVersion = "1.0.0"
             description = "Compose Multiplatform based windows app for winget GUI package manager"
             copyright = "© 2024 Trishiraj. All rights reserved."
-//            windows {
-//                iconFile.set(project.file(".ico"))
-//            }
+            windows {
+                iconFile.set(project.file("kmp-winget.ico"))
+            }
         }
     }
 }
