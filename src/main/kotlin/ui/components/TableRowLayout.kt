@@ -111,10 +111,12 @@ fun TableRowLayout(
                 onClickAction = {
                     performAction(
                         scope = scope,
-                        action = PerformAction.UpgradePackage(packageName = pkg.name),
+                        action = PerformAction.UninstallPackage(packageName = pkg.name),
                         setLoading = setLoading,
-                        onPackagesLoaded = { /* No-op for upgrades */ },
-                        onActionComplete = {
+                        onPackagesLoaded = { /* No-op for uninstalls */ },
+                        onActionComplete = { success ->
+                            if (success) println("Package uninstalled successfully")
+                            else println("Package uninstalled failed")
                         }
                     )
                 },

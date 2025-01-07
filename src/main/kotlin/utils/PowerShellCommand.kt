@@ -75,7 +75,7 @@ private fun parseWingetList(output: String): List<Package> {
 
 fun upgradePackage(packageName: String): Boolean {
     try {
-        val escapedPackageName = packageName.replace("\"", "\\\"")
+        val escapedPackageName = packageName.replace("\"", "\\\"") // Escape quotes
         val command = "winget upgrade -q \"$escapedPackageName\" --accept-source-agreements --accept-package-agreements"
         val output = executeCommand(command)
         println("Upgrade Output for $packageName: $output")
@@ -84,6 +84,28 @@ fun upgradePackage(packageName: String): Boolean {
                 output.contains("No applicable update found", ignoreCase = true)
     } catch (e: Exception) {
         println("Error upgrading package $packageName: ${e.message}")
+        return false
+    }
+}
+
+fun uninstallPackage(packageName: String): Boolean {
+    try {
+        val cleanedPackageName = packageName
+            .replace(Regex("\\s*\\d+(\\.\\d+)?\\s*"), " ") // Remove version numbers
+            .replace(Regex("\\s*\\.\\s*"), " ")            // Remove stray dots
+            .trim()                                        // Trim extra spaces
+
+        // Escape quotes for safety
+        val escapedPackageName = cleanedPackageName.replace("\"", "\\\"")
+
+        val command = "winget uninstall -q \"$escapedPackageName\" --accept-source-agreements"
+        val output = executeCommand(command)
+        println("Uninstall Output for $cleanedPackageName: $output")
+
+        return output.contains("Successfully uninstalled", ignoreCase = true) ||
+                output.contains("No installed package found", ignoreCase = true)
+    } catch (e: Exception) {
+        println("Error uninstalling package $packageName: ${e.message}")
         return false
     }
 }
@@ -120,6 +142,13 @@ fun performAction(
                         upgradePackage(action.packageName)
                     }
                     onActionComplete?.invoke(upgradeResult)
+                }
+
+                is PerformAction.UninstallPackage -> {
+                    val uninstallResult = withContext(Dispatchers.IO) {
+                        uninstallPackage(action.packageName)
+                    }
+                    onActionComplete?.invoke(uninstallResult)
                 }
             }
         } catch (e: Exception) {
