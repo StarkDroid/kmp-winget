@@ -13,7 +13,7 @@ object AppColors {
         onSecondary = Color(0xFF000000),
         onBackground = Color(0xFF000000),
         onSurface = Color(0xFF000000),
-        onError = Color(0xFFFFFFFF),
+        onError = Color(0xFFFF8383),
     )
 
     // Dark Theme Colors
@@ -27,7 +27,7 @@ object AppColors {
         onSecondary = Color(0xFF000000),
         onBackground = Color(0xFF000000),
         onSurface = Color(0xFFFFFFFF),
-        onError = Color(0xFF000000),
+        onError = Color(0xFFFF8383),
     )
 
     // Define Custom Colors

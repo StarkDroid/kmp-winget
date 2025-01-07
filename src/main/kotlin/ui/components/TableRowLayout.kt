@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Download
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -102,6 +103,26 @@ fun TableRowLayout(
                     color = Color.Green
                 )
             }
+
+            DynamicIconButton(
+                backgroundColor = MaterialTheme.colors.onError,
+                modifier = Modifier
+                    .size(32.dp),
+                onClickAction = {
+                    performAction(
+                        scope = scope,
+                        action = PerformAction.UpgradePackage(packageName = pkg.name),
+                        setLoading = setLoading,
+                        onPackagesLoaded = { /* No-op for upgrades */ },
+                        onActionComplete = {
+                        }
+                    )
+                },
+                iconImage = Icons.TwoTone.Delete,
+                iconSize = 18.dp,
+                iconTint = MaterialTheme.colors.onBackground,
+                contentDescription = "Uninstall package button"
+            )
         }
     }
 }
