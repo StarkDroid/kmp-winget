@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material.icons.twotone.Search
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -14,10 +15,14 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
+import model.Package
+import model.PerformAction
 import theme.AppColors
 import theme.ThemeState
 import utils.bodyFont
 import utils.loadString
+import utils.performAction
 
 @Composable
 fun SearchBar(
@@ -25,7 +30,11 @@ fun SearchBar(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     showUpgradesOnly: Boolean,
-    onToggleChange: (Boolean) -> Unit
+    onToggleChange: (Boolean) -> Unit,
+    setLoading: (Boolean) -> Unit,
+    isLoading: Boolean,
+    scope: CoroutineScope,
+    onPackagesLoaded: (List<Package>) -> Unit
 ) {
     Box(
         modifier.fillMaxWidth(),
@@ -36,6 +45,26 @@ fun SearchBar(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            DynamicIconButton(
+                backgroundColor = MaterialTheme.colors.background,
+                modifier = Modifier.size(36.dp),
+                onClickAction = {
+                    performAction(
+                        scope = scope,
+                        onPackagesLoaded = onPackagesLoaded,
+                        setLoading = setLoading,
+                        action = PerformAction.RefreshList
+                    )
+                },
+                isEnabled = !isLoading,
+                iconImage = Icons.TwoTone.Refresh,
+                iconSize = 18.dp,
+                iconTint = MaterialTheme.colors.onBackground,
+                contentDescription = "Refresh packages"
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
             TextField(
                 value = query,
                 onValueChange = onQueryChange,
@@ -68,13 +97,11 @@ fun SearchBar(
                 )
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-
-
                 Switch(
                     checked = showUpgradesOnly,
                     onCheckedChange = onToggleChange,

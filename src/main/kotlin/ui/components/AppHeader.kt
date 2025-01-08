@@ -5,31 +5,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.*
+import androidx.compose.material.icons.twotone.CleaningServices
+import androidx.compose.material.icons.twotone.ModeNight
+import androidx.compose.material.icons.twotone.WbSunny
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.CoroutineScope
-import model.Package
-import model.PerformAction
 import theme.AppColors
 import theme.ThemeState
 import utils.executeCommand
 import utils.headingFont
 import utils.loadString
-import utils.performAction
 
 @Composable
 fun AppHeader(
     isDarkMode: Boolean,
     isLoading: Boolean,
-    setLoading: (Boolean) -> Unit,
-    scope: CoroutineScope,
-    onPackagesLoaded: (List<Package>) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -71,26 +65,6 @@ fun AppHeader(
                 )
             }
         }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        DynamicIconButton(
-            backgroundColor = MaterialTheme.colors.background,
-            modifier = Modifier.size(36.dp),
-            onClickAction = {
-                performAction(
-                    scope = scope,
-                    onPackagesLoaded = onPackagesLoaded,
-                    setLoading = setLoading,
-                    action = PerformAction.RefreshList
-                )
-            },
-            isEnabled = !isLoading,
-            iconImage = Icons.TwoTone.Refresh,
-            iconSize = 18.dp,
-            iconTint = MaterialTheme.colors.onBackground,
-            contentDescription = "Refresh packages"
-        )
 
         Spacer(modifier = Modifier.weight(1f))
 

@@ -76,18 +76,14 @@ fun MainScreen() {
             ) {
 
                 AppHeader(
-                    scope = scope,
                     isDarkMode = isDarkMode,
                     isLoading = isLoading,
-                    onPackagesLoaded = { result ->
-                        packages = result
-                    },
-                    setLoading = { isLoading = it },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 SearchBar(
+                    scope = scope,
                     query = searchQuery,
                     onQueryChange = { query ->
                         searchQuery = query
@@ -96,7 +92,12 @@ fun MainScreen() {
                     onToggleChange = { isChecked ->
                         showUpgradesOnly = isChecked
                         refreshPackages()
-                    }
+                    },
+                    onPackagesLoaded = { result ->
+                        packages = result
+                    },
+                    setLoading = { isLoading = it },
+                    isLoading = isLoading,
                 )
 
                 Row(
