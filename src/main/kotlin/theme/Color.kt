@@ -34,4 +34,6 @@ object AppColors {
     val darkSwitchCheckedTrackColor = Color(0xFF16C47F)
     val lightSwitchCheckedTrackColor = Color(0xFF54C392)
     val diskManagerBackgroundColor = Color(0xFFffd65a)
+    val headerWingetTextColorLight = Color(0xFF0A5EB0)
+    val headerWingetTextColorDark = Color(0xFF0D92F4)
 }

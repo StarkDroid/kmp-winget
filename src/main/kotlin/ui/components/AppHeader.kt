@@ -1,5 +1,6 @@
 package ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -8,6 +9,8 @@ import androidx.compose.material.icons.twotone.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
@@ -34,13 +37,40 @@ fun AppHeader(
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            loadString("app.name"),
-            fontFamily = headingFont,
-            style = MaterialTheme.typography.h6,
-            color = MaterialTheme.colors.onSurface,
-            fontSize = 21.sp,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource("drawables/kmp-winget.png"),
+                modifier = Modifier
+                    .height(36.dp)
+                    .width(36.dp),
+                contentDescription = "App brand icon"
+            )
+
+            Spacer(Modifier.width(8.dp))
+
+            Column {
+                Text(
+                    loadString("app.header.subtitle"),
+                    fontFamily = headingFont,
+                    style = MaterialTheme.typography.body1,
+                    color = if (isDarkMode) {
+                        AppColors.headerWingetTextColorDark
+                    } else {
+                        AppColors.headerWingetTextColorLight
+                    }
+                )
+
+                Text(
+                    loadString("app.header.title"),
+                    fontFamily = headingFont,
+                    style = MaterialTheme.typography.h6,
+                    color = MaterialTheme.colors.onSurface,
+                    fontSize = 21.sp,
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(10.dp))
 
