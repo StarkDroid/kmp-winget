@@ -151,6 +151,7 @@ fun MainScreen() {
                                     pkg = pkg,
                                     scope = scope,
                                     setLoading = { isLoading = it },
+                                    refreshPackages = refreshPackages
                                 )
                             }
                         }

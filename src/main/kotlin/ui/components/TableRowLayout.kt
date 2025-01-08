@@ -25,6 +25,7 @@ fun TableRowLayout(
     pkg: Package,
     scope: CoroutineScope,
     setLoading: (Boolean) -> Unit,
+    refreshPackages: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -71,6 +72,7 @@ fun TableRowLayout(
                             onActionComplete = { success ->
                                 if (success) {
                                     println("Package upgraded successfully")
+                                    refreshPackages()
                                 } else {
                                     println("Package upgrade failed")
                                 }
@@ -115,8 +117,12 @@ fun TableRowLayout(
                         setLoading = setLoading,
                         onPackagesLoaded = { /* No-op for uninstalls */ },
                         onActionComplete = { success ->
-                            if (success) println("Package uninstalled successfully")
-                            else println("Package uninstalled failed")
+                            if (success) {
+                                println("Package uninstalled successfully")
+                                refreshPackages()
+                            } else {
+                                println("Package uninstalled failed")
+                            }
                         }
                     )
                 },
