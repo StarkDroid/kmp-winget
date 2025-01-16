@@ -7,6 +7,12 @@ import kotlinx.coroutines.withContext
 import model.Package
 import model.PerformAction
 
+/**
+ *
+ * Primary command that takes winget as an input and targets the
+ * required command
+ *
+* */
 fun executeCommand(command: String): String {
     println("Executing $command")
     val process = ProcessBuilder("powershell.exe", "-Command", command)
@@ -18,6 +24,13 @@ fun executeCommand(command: String): String {
     }
 }
 
+/**
+ *
+ * Runs the "winget list" command, to fetch the entire list of apps installed.
+ * Also appends "--upgrade-available" command when the upgrade toggle is clicked in the UI
+ * Needs winget installed in powershell CLI
+ *
+ * */
 private fun listInstalledPackages(showUpgradesOnly: Boolean): List<Package> {
     val command = buildString {
         append("winget list --disable-interactivity")
@@ -30,6 +43,12 @@ private fun listInstalledPackages(showUpgradesOnly: Boolean): List<Package> {
     return parseWingetList(output)
 }
 
+/**
+ *
+ * The console output sanitation takes place here and is
+ * put into their respective columns as a list of packages
+ *
+ * */
 private fun parseWingetList(output: String): List<Package> {
     return output.lines()
         .drop(2)
@@ -73,6 +92,12 @@ private fun parseWingetList(output: String): List<Package> {
         }
 }
 
+/**
+ *
+ * Function to run an individual package upgrade with the base command
+ * winget upgrade -q "Package Name"
+ *
+ * */
 fun upgradePackage(packageName: String): Boolean {
     try {
         val escapedPackageName = packageName.replace("\"", "\\\"") // Escape quotes
@@ -88,6 +113,12 @@ fun upgradePackage(packageName: String): Boolean {
     }
 }
 
+/**
+ *
+ * Function to uninstall an individual package with the base command
+ * winget uninstall -q "Package Name"
+ *
+ * */
 fun uninstallPackage(packageName: String): Boolean {
     try {
         val cleanedPackageName = packageName
@@ -110,6 +141,12 @@ fun uninstallPackage(packageName: String): Boolean {
     }
 }
 
+/**
+ *
+ * One function to rule them all, this is the function that gets called for
+ * Upgrade / Uninstall / Refresh list actions
+ *
+ * */
 fun performAction(
     scope: CoroutineScope,
     onPackagesLoaded: (List<Package>) -> Unit,
