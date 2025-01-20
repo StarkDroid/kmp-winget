@@ -55,7 +55,7 @@ or you can simply visit the [release]() page to get the latest build
 
 - Light/dark mode toggle
 - List all the installed apps
-- Display number of apps
+- Displays the number of apps
 - Shows installed version of the app
 - Shows available updates for an app
 - One click solution to disc cleanup
