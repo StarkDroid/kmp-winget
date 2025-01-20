@@ -12,5 +12,6 @@ data class ColorScheme(
     val onSecondary: Color,
     val onBackground: Color,
     val onSurface: Color,
-    val onError: Color
+    val onError: Color,
+    val switchCheckedTrackColor: Color  // Add this new property
 )
