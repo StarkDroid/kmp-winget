@@ -12,7 +12,7 @@ import model.PerformAction
  * Primary command that takes winget as an input and targets the
  * required command
  *
-* */
+ * */
 fun executeCommand(command: String): String {
     println("Executing $command")
     val process = ProcessBuilder("powershell.exe", "-Command", command)

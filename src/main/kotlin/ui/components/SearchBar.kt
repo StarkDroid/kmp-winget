@@ -11,15 +11,12 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import model.Package
 import model.PerformAction
-import theme.AppColors
-import theme.ThemeState
 import utils.bodyFont
 import utils.loadString
 import utils.performAction
@@ -105,18 +102,12 @@ fun SearchBar(
                 Switch(
                     checked = showUpgradesOnly,
                     onCheckedChange = onToggleChange,
-                    modifier = Modifier.scale(0.7f),
-                    colors = if (ThemeState.isDarkMode.value) {
-                        SwitchDefaults.colors(
-                            checkedTrackColor = AppColors.darkSwitchCheckedTrackColor,
-                            uncheckedTrackColor = MaterialTheme.colors.onBackground.copy(0.3f),
-                        )
-                    } else {
-                        SwitchDefaults.colors(
-                            checkedTrackColor = AppColors.lightSwitchCheckedTrackColor,
-                            uncheckedTrackColor = MaterialTheme.colors.onBackground.copy(0.3f),
-                        )
-                    }
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = MaterialTheme.colors.primary.copy(alpha = 0.5f),
+                        checkedThumbColor = MaterialTheme.colors.primary
+                    ),
+                    enabled = !isLoading,
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
                 Text(

@@ -10,23 +10,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import model.PerformAction
 import theme.AppTheme
 import theme.ThemeState
-import ui.components.AppHeader
-import ui.components.SearchBar
-import ui.components.TableRowLayout
+import ui.components.*
 import utils.bodyFont
 import utils.loadString
 import utils.performAction
@@ -34,6 +27,7 @@ import utils.performAction
 @Composable
 @Preview
 fun MainScreen() {
+    // State management
     var showUpgradesOnly by remember { mutableStateOf(false) }
     var packages by remember { mutableStateOf<List<model.Package>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -42,136 +36,162 @@ fun MainScreen() {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val isDarkMode = ThemeState.isDarkMode.value
-    val filteredPackages = packages.filter {
-        it.name.contains(searchQuery, ignoreCase = true) ||
-                it.id.contains(searchQuery, ignoreCase = true)
+
+    // MS Store filtering logic
+    val filteredPackages = remember(packages, searchQuery, showUpgradesOnly) {
+        packages
+            .filterNot { showUpgradesOnly && it.isMsStorePackage }
+            .filter {
+                searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) ||
+                        it.id.contains(searchQuery, ignoreCase = true)
+            }
+            .let { if (showUpgradesOnly) it.filter { pkg -> pkg.hasNonMsStoreUpgrade } else it }
     }
 
+    // Refresh packages function
     val refreshPackages = {
         performAction(
             scope = scope,
-            onPackagesLoaded = { result ->
-                packages = result
-            },
+            onPackagesLoaded = { result -> packages = result },
             setLoading = { isLoading = it },
             action = PerformAction.RefreshList,
             showUpgradesOnly = showUpgradesOnly
         )
     }
 
+    // Initial load
     LaunchedEffect(Unit) {
         refreshPackages()
     }
 
     AppTheme {
+        // Loading dialog overlay
+        if (isLoading) {
+            LoaderDialog()
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = MaterialTheme.colors.surface)
+                .background(MaterialTheme.colors.surface)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(end = 16.dp)
+                    .padding(horizontal = 16.dp)
             ) {
-
+                // Header
                 AppHeader(
                     isDarkMode = isDarkMode,
-                    isLoading = isLoading,
+                    isLoading = isLoading
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Search bar
                 SearchBar(
                     scope = scope,
                     query = searchQuery,
-                    onQueryChange = { query ->
-                        searchQuery = query
-                    },
+                    onQueryChange = { searchQuery = it },
                     showUpgradesOnly = showUpgradesOnly,
-                    onToggleChange = { isChecked ->
-                        showUpgradesOnly = isChecked
+                    onToggleChange = {
+                        showUpgradesOnly = it
                         refreshPackages()
                     },
-                    onPackagesLoaded = { result ->
-                        packages = result
-                    },
+                    onPackagesLoaded = { packages = it },
                     setLoading = { isLoading = it },
-                    isLoading = isLoading,
+                    isLoading = isLoading
                 )
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Table header
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = loadString("table.column.name"),
-                        style = MaterialTheme.typography.subtitle2,
-                        color = MaterialTheme.colors.onSurface,
+                    // Package count
+                    Row(
                         modifier = Modifier.weight(1f),
-                        fontFamily = bodyFont,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = loadString("table.column.version"),
-                        style = MaterialTheme.typography.subtitle2,
-                        color = MaterialTheme.colors.onSurface,
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            text = loadString("table.column.name"),
+                            style = MaterialTheme.typography.subtitle2,
+                            color = MaterialTheme.colors.onSurface,
+                            fontFamily = bodyFont,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Card(
+                            modifier = Modifier.padding(start = 8.dp),
+                            backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = "${filteredPackages.size}",
+                                style = MaterialTheme.typography.caption,
+                                color = MaterialTheme.colors.primary,
+                                fontFamily = bodyFont,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    // Version column
+                    Box(
                         modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.End,
-                        fontFamily = bodyFont,
-                        fontWeight = FontWeight.SemiBold,
-                    )
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Text(
+                            text = loadString("table.column.version"),
+                            style = MaterialTheme.typography.subtitle2,
+                            color = MaterialTheme.colors.onSurface,
+                            fontFamily = bodyFont,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
 
                 Divider(
                     color = MaterialTheme.colors.onSurface.copy(alpha = 0.2f),
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
 
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            strokeCap = StrokeCap.Round,
-                            strokeWidth = 6.dp,
-                            color = MaterialTheme.colors.onSurface
-                        )
-                    } else {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(end = 8.dp)
-                        ) {
-                            items(filteredPackages) { pkg ->
-                                TableRowLayout(
-                                    pkg = pkg,
-                                    scope = scope,
-                                    setLoading = { isLoading = it },
-                                    refreshPackages = refreshPackages
-                                )
-                            }
-                        }
-
-                        VerticalScrollbar(
-                            adapter = rememberScrollbarAdapter(scrollState = listState),
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .fillMaxHeight(),
-                            style = ScrollbarStyle(
-                                shape = RoundedCornerShape(4.dp),
-                                minimalHeight = 40.dp,
-                                thickness = 8.dp,
-                                unhoverColor = MaterialTheme.colors.onSurface.copy(0.5f),
-                                hoverColor = MaterialTheme.colors.onSurface,
-                                hoverDurationMillis = 150
+                // Content
+                Box(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize().padding(end = 12.dp)
+                    ) {
+                        items(
+                            items = filteredPackages,
+                            key = { pkg -> pkg.uniqueId }
+                        ) { pkg ->
+                            TableRowLayout(
+                                pkg = pkg,
+                                scope = scope,
+                                setLoading = { isLoading = it },
+                                refreshPackages = refreshPackages
                             )
-                        )
+                        }
                     }
+
+                    // Scrollbar
+                    VerticalScrollbar(
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                        adapter = rememberScrollbarAdapter(scrollState = listState),
+                        style = ScrollbarStyle(
+                            shape = RoundedCornerShape(4.dp),
+                            minimalHeight = 40.dp,
+                            thickness = 8.dp,
+                            unhoverColor = MaterialTheme.colors.onSurface.copy(0.3f),
+                            hoverColor = MaterialTheme.colors.onSurface.copy(0.7f),
+                            hoverDurationMillis = 150
+                        )
+                    )
                 }
             }
         }
