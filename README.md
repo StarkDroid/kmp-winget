@@ -28,7 +28,7 @@ It's recommended to use [IntelliJ Idea IDEA](https://www.jetbrains.com/idea/) to
 Clone the project
 
 ```bash
-  git clone https://github.com/itza2k/kmp-winget
+  git clone https://github.com/kugchennai/kmp-winget
 ```
 
 Go to the project directory
