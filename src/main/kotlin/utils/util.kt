@@ -10,8 +10,8 @@ import java.util.*
  * init fonts here
  */
 //changed to google sans
-val headingFont = FontFamily(Font("font/GoogleSans-Bold.ttf"))
-val bodyFont = FontFamily(Font("font/GoogleSans-Regular.ttf"))//changed to google sans
+val headingFont = FontFamily(Font("font/Lato-Bold.ttf"))
+val bodyFont = FontFamily(Font("font/Lato-Regular.ttf"))
 
 /**
  * Function to load strings (Non Compose way)
