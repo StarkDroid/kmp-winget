@@ -18,7 +18,9 @@ fun AppTheme(
     val colors = if (isDarkTheme) {
         darkColors(
             primary = AppColors.Dark.primary,
+            primaryVariant = AppColors.Dark.primaryVariant,
             secondary = AppColors.Dark.secondary,
+            secondaryVariant = AppColors.Dark.secondaryVariant,
             background = AppColors.Dark.background,
             surface = AppColors.Dark.surface,
             onPrimary = AppColors.Dark.onPrimary,
@@ -30,7 +32,9 @@ fun AppTheme(
     } else {
         lightColors(
             primary = AppColors.Light.primary,
+            primaryVariant = AppColors.Light.primaryVariant,
             secondary = AppColors.Light.secondary,
+            secondaryVariant = AppColors.Light.secondaryVariant,
             background = AppColors.Light.background,
             surface = AppColors.Light.surface,
             onPrimary = AppColors.Light.onPrimary,
