@@ -67,6 +67,7 @@ or you can simply visit the [release]() page to get the latest build
 ## Roadmap
 
 - [ ] Bring support to linux with the help of apt commands
+- [x] Improvements to UI with dialog popup loader
 - [ ] Remove MS Store upgrades out of the upgrades list
 - [ ] Implement feature to be able to install apps available via winget
 - [ ] Do some packages list sanitation
@@ -79,6 +80,4 @@ or you can simply visit the [release]() page to get the latest build
 **Services:** Winget-CLI
 
 **Platform:** Windows 10/11
-
-## Modded by itza2k
 

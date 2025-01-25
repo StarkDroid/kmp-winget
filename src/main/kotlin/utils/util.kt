@@ -9,7 +9,6 @@ import java.util.*
 /**
  * init fonts here
  */
-//changed to google sans
 val headingFont = FontFamily(Font("font/Lato-Bold.ttf"))
 val bodyFont = FontFamily(Font("font/Lato-Regular.ttf"))
 
