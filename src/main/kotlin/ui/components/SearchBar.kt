@@ -11,12 +11,14 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import model.Package
 import model.PerformAction
+import theme.AppColors
 import utils.bodyFont
 import utils.loadString
 import utils.performAction
@@ -43,7 +45,7 @@ fun SearchBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             DynamicIconButton(
-                backgroundColor = MaterialTheme.colors.background,
+                backgroundColor = MaterialTheme.colors.surface,
                 modifier = Modifier.size(36.dp),
                 onClickAction = {
                     performAction(
@@ -102,12 +104,13 @@ fun SearchBar(
                 Switch(
                     checked = showUpgradesOnly,
                     onCheckedChange = onToggleChange,
+                    modifier = Modifier.scale(0.8f),
                     colors = SwitchDefaults.colors(
-                        checkedTrackColor = MaterialTheme.colors.primary.copy(alpha = 0.5f),
-                        checkedThumbColor = MaterialTheme.colors.primary
+                        checkedTrackColor = AppColors.switchCheckedTrackColor,
+                        uncheckedTrackColor = MaterialTheme.colors.surface,
+                        checkedThumbColor = MaterialTheme.colors.secondaryVariant
                     ),
                     enabled = !isLoading,
-                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
                 Text(

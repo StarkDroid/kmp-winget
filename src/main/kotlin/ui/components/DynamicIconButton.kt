@@ -23,7 +23,7 @@ fun DynamicIconButton(
     buttonBackgroundSize: Dp = 32.dp,
     iconSize: Dp = 24.dp,
     backgroundColor: Color = MaterialTheme.colors.surface,
-    borderColor: Color = MaterialTheme.colors.onBackground.copy(alpha = 0.2f),
+    borderColor: Color = MaterialTheme.colors.onBackground.copy(alpha = 0.4f),
     elevation: Dp = 4.dp,
     contentDescription: String = "Refresh button",
 ) {

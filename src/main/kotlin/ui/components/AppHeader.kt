@@ -69,7 +69,7 @@ fun AppHeader(
         Spacer(modifier = Modifier.weight(1f))
 
         DynamicIconButton(
-            backgroundColor = AppColors.diskManagerBackgroundColor,
+            backgroundColor = MaterialTheme.colors.primaryVariant,
             modifier = Modifier.size(36.dp),
             onClickAction = {
                 executeCommand("cleanmgr")
@@ -77,12 +77,12 @@ fun AppHeader(
             isEnabled = !isLoading,
             iconImage = Icons.TwoTone.CleaningServices,
             iconSize = 18.dp,
-            iconTint = MaterialTheme.colors.onBackground,
+            iconTint = MaterialTheme.colors.onSecondary,
             contentDescription = "Open Disk Manager"
         )
 
         DynamicIconButton(
-            backgroundColor = MaterialTheme.colors.background,
+            backgroundColor = MaterialTheme.colors.surface,
             modifier = Modifier.size(36.dp),
             onClickAction = {
                 ThemeState.isDarkMode.value = !isDarkMode

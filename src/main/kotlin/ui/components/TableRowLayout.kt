@@ -62,9 +62,7 @@ fun TableRowLayout(
 
             if (!pkg.availableVersion.isNullOrBlank()) {
                 DynamicIconButton(
-                    backgroundColor = if (MaterialTheme.colors.isLight)
-                        AppColors.downloadButtonLight
-                    else AppColors.downloadButtonDark,
+                    backgroundColor = MaterialTheme.colors.primaryVariant,
                     modifier = Modifier
                         .size(32.dp),
                     onClickAction = {
@@ -85,7 +83,7 @@ fun TableRowLayout(
                     },
                     iconImage = Icons.TwoTone.Download,
                     iconSize = 18.dp,
-                    iconTint = Color.Black,  // Changed to white for better visibility on colored buttons
+                    iconTint = MaterialTheme.colors.onSecondary,
                     contentDescription = "Upgrade package"
                 )
             }
@@ -111,17 +109,15 @@ fun TableRowLayout(
                             textAlign = TextAlign.End,
                             fontFamily = bodyFont,
                             color = if (MaterialTheme.colors.isLight)
-                                AppColors.successLight
-                            else AppColors.successDark
+                                AppColors.upgradeAvailableLight
+                            else AppColors.upgradeAvailableDark
                         )
                     )
                 )
             }
 
             DynamicIconButton(
-                backgroundColor = if (MaterialTheme.colors.isLight)
-                    AppColors.deleteButtonLight
-                else AppColors.deleteButtonDark,
+                backgroundColor = AppColors.deleteButton,
                 modifier = Modifier
                     .size(32.dp),
                 onClickAction = {
