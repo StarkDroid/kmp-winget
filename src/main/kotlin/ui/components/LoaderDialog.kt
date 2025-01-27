@@ -22,12 +22,11 @@ import utils.loadString
 @Composable
 fun LoaderDialog(
     message: String = loadString("dialog.loading"),
-    secondaryMessage: String = loadString("dialog.loading.secondary")
+    secondaryMessage: String = loadString("dialog.loading.message")
 ) {
     Dialog(onDismissRequest = {}) {
         val infiniteTransition = rememberInfiniteTransition()
 
-        // the rotation animation
         val rotation by infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 360f,
@@ -37,22 +36,11 @@ fun LoaderDialog(
             )
         )
 
-        // the pulse animation
         val scale by infiniteTransition.animateFloat(
             initialValue = 0.8f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
                 animation = tween(800, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse
-            )
-        )
-
-        // shimmer effect
-        val shimmerEffect by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1000, easing = LinearEasing),
                 repeatMode = RepeatMode.Reverse
             )
         )
@@ -70,9 +58,8 @@ fun LoaderDialog(
                     .background(
                         brush = Brush.linearGradient(
                             colors = listOf(
-                                MaterialTheme.colors.surface,
-                                MaterialTheme.colors.primary.copy(alpha = 0.1f * shimmerEffect),
-                                MaterialTheme.colors.surface
+                                MaterialTheme.colors.background,
+                                MaterialTheme.colors.background
                             )
                         )
                     )
@@ -83,7 +70,6 @@ fun LoaderDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // spin the icon
                     Icon(
                         imageVector = Icons.Filled.Refresh,
                         contentDescription = null,
@@ -91,10 +77,9 @@ fun LoaderDialog(
                             .size(48.dp)
                             .rotate(rotation)
                             .alpha(scale),
-                        tint = MaterialTheme.colors.primary
+                        tint = MaterialTheme.colors.primaryVariant
                     )
 
-                    //  message
                     Text(
                         text = message,
                         style = MaterialTheme.typography.h6,
@@ -103,7 +88,6 @@ fun LoaderDialog(
                         color = MaterialTheme.colors.onSurface
                     )
 
-                    // 2nd message with pulse ani
                     Text(
                         text = secondaryMessage,
                         style = MaterialTheme.typography.caption,
@@ -113,12 +97,11 @@ fun LoaderDialog(
                         modifier = Modifier.alpha(scale)
                     )
 
-                    // progress indicator
                     LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp),
-                        color = MaterialTheme.colors.primary,
+                        color = MaterialTheme.colors.primaryVariant,
                         backgroundColor = MaterialTheme.colors.onSurface.copy(alpha = 0.1f)
                     )
                 }

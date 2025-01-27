@@ -27,7 +27,6 @@ import utils.performAction
 @Composable
 @Preview
 fun MainScreen() {
-    // State management
     var showUpgradesOnly by remember { mutableStateOf(false) }
     var packages by remember { mutableStateOf<List<model.Package>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -37,7 +36,6 @@ fun MainScreen() {
     val scope = rememberCoroutineScope()
     val isDarkMode = ThemeState.isDarkMode.value
 
-    // MS Store filtering logic
     val filteredPackages = remember(packages, searchQuery, showUpgradesOnly) {
         packages
             .filterNot { showUpgradesOnly && it.isMsStorePackage }
@@ -48,7 +46,6 @@ fun MainScreen() {
             .let { if (showUpgradesOnly) it.filter { pkg -> pkg.hasNonMsStoreUpgrade } else it }
     }
 
-    // Refresh packages function
     val refreshPackages = {
         performAction(
             scope = scope,
@@ -59,13 +56,11 @@ fun MainScreen() {
         )
     }
 
-    // Initial load
     LaunchedEffect(Unit) {
         refreshPackages()
     }
 
     AppTheme {
-        // Loading dialog overlay
         if (isLoading) {
             LoaderDialog()
         }
@@ -73,14 +68,14 @@ fun MainScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colors.surface)
+                .background(MaterialTheme.colors.background)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
             ) {
-                // Header
+
                 AppHeader(
                     isDarkMode = isDarkMode,
                     isLoading = isLoading
@@ -88,7 +83,6 @@ fun MainScreen() {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Search bar
                 SearchBar(
                     scope = scope,
                     query = searchQuery,
@@ -105,13 +99,11 @@ fun MainScreen() {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Table header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Package count
                     Row(
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
@@ -140,7 +132,6 @@ fun MainScreen() {
                         }
                     }
 
-                    // Version column
                     Box(
                         modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterEnd
@@ -160,7 +151,6 @@ fun MainScreen() {
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
-                // Content
                 Box(modifier = Modifier.fillMaxSize()) {
                     LazyColumn(
                         state = listState,
@@ -179,7 +169,6 @@ fun MainScreen() {
                         }
                     }
 
-                    // Scrollbar
                     VerticalScrollbar(
                         modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                         adapter = rememberScrollbarAdapter(scrollState = listState),

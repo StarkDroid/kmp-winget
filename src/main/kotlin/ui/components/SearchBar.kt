@@ -87,7 +87,7 @@ fun SearchBar(
                 },
                 shape = RoundedCornerShape(16.dp),
                 colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = MaterialTheme.colors.onBackground.copy(0.3f),
+                    backgroundColor = MaterialTheme.colors.surface,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     placeholderColor = MaterialTheme.colors.onSurface.copy(0.3f),

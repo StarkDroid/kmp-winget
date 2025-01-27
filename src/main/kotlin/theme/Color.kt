@@ -9,7 +9,7 @@ object AppColors {
         secondary = Color(0xFF03DAC6),
         secondaryVariant = Color(0xFFFFFFFF),
         background = Color(0xFFFCFCFD),
-        surface = Color(0xFFFFFFFF),
+        surface = Color(0xFFEEEEEE),
         error = Color(0xFFB00020),
         onPrimary = Color(0xFFFFFFFF),
         onSecondary = Color(0xFF000000),
