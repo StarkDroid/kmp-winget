@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.kugc.kmpwinget"
-version = "1.0-SNAPSHOT"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -29,10 +29,14 @@ compose.desktop {
     application {
         mainClass = "MainKt"
 
+        run {
+            jvmArgs += listOf("-Dapp.version=${project.version}")
+        }
+
         nativeDistributions {
             targetFormats(TargetFormat.Msi)
             packageName = "kmp-winget"
-            packageVersion = "1.0.0"
+            packageVersion = project.version.toString()
             description = "Compose Multiplatform based windows app for winget GUI package manager"
             copyright = "© 2024 Trishiraj. All rights reserved."
             windows {

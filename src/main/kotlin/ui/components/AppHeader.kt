@@ -25,6 +25,7 @@ fun AppHeader(
     isDarkMode: Boolean,
     isLoading: Boolean,
 ) {
+
     Row(
         modifier = Modifier
             .padding(16.dp)
@@ -62,6 +63,13 @@ fun AppHeader(
                     style = MaterialTheme.typography.h6,
                     color = MaterialTheme.colors.onSurface,
                     fontSize = 21.sp,
+                )
+
+                Text(
+                    text = "v".plus(System.getProperty("app.version")),
+                    fontFamily = headingFont,
+                    style = MaterialTheme.typography.caption,
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
                 )
             }
         }
