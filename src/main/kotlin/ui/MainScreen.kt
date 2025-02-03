@@ -36,14 +36,9 @@ fun MainScreen() {
     val scope = rememberCoroutineScope()
     val isDarkMode = ThemeState.isDarkMode.value
 
-    val filteredPackages = remember(packages, searchQuery, showUpgradesOnly) {
-        packages
-            .filterNot { showUpgradesOnly && it.isMsStorePackage }
-            .filter {
-                searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) ||
-                        it.id.contains(searchQuery, ignoreCase = true)
-            }
-            .let { if (showUpgradesOnly) it.filter { pkg -> pkg.hasNonMsStoreUpgrade } else it }
+    val filteredPackages = packages.filter {
+        it.name.contains(searchQuery, ignoreCase = true) ||
+                it.id.contains(searchQuery, ignoreCase = true)
     }
 
     val refreshPackages = {

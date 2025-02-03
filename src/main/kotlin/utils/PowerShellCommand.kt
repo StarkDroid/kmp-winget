@@ -167,6 +167,7 @@ fun performAction(
                             version = pkg.version.takeIf { it != "Unknown" && it != "winget" } ?: "",
                             availableVersion = pkg.availableVersion
                                 ?.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
+                                ?.replace(Regex("\\s*msstore\\b", RegexOption.IGNORE_CASE), "")
                                 ?.trim()
                                 ?: ""
                         )
