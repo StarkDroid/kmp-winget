@@ -10,16 +10,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.Divider
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import model.PerformAction
 import theme.AppTheme
 import theme.ThemeState
-import ui.components.*
+import ui.components.AppHeader
+import ui.components.LoaderDialog
+import ui.components.SearchBar
+import ui.components.TableRowLayout
 import utils.bodyFont
 import utils.loadString
 import utils.performAction
@@ -111,18 +117,22 @@ fun MainScreen() {
                             fontFamily = bodyFont,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Card(
-                            modifier = Modifier.padding(start = 8.dp),
-                            backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(12.dp),
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 8.dp, top = 8.dp)
+                                .background(
+                                    color = MaterialTheme.colors.primaryVariant.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
                         ) {
                             Text(
                                 text = "${filteredPackages.size}",
                                 style = MaterialTheme.typography.caption,
-                                color = MaterialTheme.colors.primary,
+                                color = MaterialTheme.colors.onSurface,
                                 fontFamily = bodyFont,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                             )
                         }
                     }
