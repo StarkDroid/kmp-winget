@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
@@ -66,6 +67,7 @@ fun SearchBar(
 
             TextField(
                 value = query,
+                textStyle = TextStyle.Default.copy(fontSize = 14.sp),
                 onValueChange = onQueryChange,
                 modifier = modifier
                     .fillMaxWidth(0.5f)
