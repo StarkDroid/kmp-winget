@@ -17,8 +17,8 @@ To know more, follow this [link](https://learn.microsoft.com/en-us/windows/packa
 
 ## Screenshots
 
-<img src="static/Screenshot-1.png" width="500" height="500">
-<img src="static/Screenshot-2.png" width="500" height="500">
+<img src="static/Lightmode.png" width="500" height="500">
+<img src="static/Darkmode.png" width="500" height="500">
 
 
 ## Run Locally
@@ -55,21 +55,23 @@ or you can simply visit the [release]() page to get the latest build
 
 - Light/dark mode toggle
 - List all the installed apps
+- Displays the number of apps
 - Shows installed version of the app
 - Shows available updates for an app
 - One click solution to disc cleanup
 - Search and filter among the list of apps
 - Ability to upgrade an app to its available update
 - Ability to uninstall an app
-
+- Dialog Loader popup 
 
 ## Roadmap
 
 - [ ] Bring support to linux with the help of apt commands
-- [ ] Improvements to UI with dialog popup loader
+- [x] Improvements to UI with dialog popup loader
 - [ ] Remove MS Store upgrades out of the upgrades list
 - [ ] Implement feature to be able to install apps available via winget
 - [ ] Do some packages list sanitation
+
 
 ## Tech Stack
 
@@ -77,5 +79,5 @@ or you can simply visit the [release]() page to get the latest build
 
 **Services:** Winget-CLI
 
-**Platform:** Windows
+**Platform:** Windows 10/11
 
