@@ -152,8 +152,7 @@ fun MainScreen() {
                         modifier = Modifier.fillMaxSize().padding(end = 12.dp)
                     ) {
                         items(
-                            items = filteredPackages,
-                            key = { pkg -> pkg.uniqueId }
+                            items = filteredPackages
                         ) { pkg ->
                             TableRowLayout(
                                 pkg = pkg,
