@@ -11,12 +11,14 @@ import androidx.compose.material.icons.twotone.Download
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import model.Package
 import model.PerformAction
+import theme.AppColors
 import utils.bodyFont
 import utils.performAction
 
@@ -60,7 +62,7 @@ fun TableRowLayout(
 
             if (!pkg.availableVersion.isNullOrBlank()) {
                 DynamicIconButton(
-                    backgroundColor = MaterialTheme.colors.background,
+                    backgroundColor = MaterialTheme.colors.primaryVariant,
                     modifier = Modifier
                         .size(32.dp),
                     onClickAction = {
@@ -81,7 +83,7 @@ fun TableRowLayout(
                     },
                     iconImage = Icons.TwoTone.Download,
                     iconSize = 18.dp,
-                    iconTint = MaterialTheme.colors.onBackground,
+                    iconTint = MaterialTheme.colors.onSecondary,
                     contentDescription = "Upgrade package"
                 )
             }
@@ -89,25 +91,33 @@ fun TableRowLayout(
             Column(modifier = Modifier.padding(end = 12.dp)) {
                 Text(
                     text = pkg.version,
-                    style = MaterialTheme.typography.subtitle2,
-                    textAlign = TextAlign.End,
-                    fontFamily = bodyFont,
-                    color = MaterialTheme.colors.onSurface
+                    style = MaterialTheme.typography.subtitle2.merge(
+                        TextStyle(
+                            textAlign = TextAlign.End,
+                            fontFamily = bodyFont,
+                            color = MaterialTheme.colors.onSurface
+                        )
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = pkg.availableVersion ?: "",
-                    style = MaterialTheme.typography.subtitle2,
-                    textAlign = TextAlign.End,
-                    fontFamily = bodyFont,
-                    color = Color.Green
+                    style = MaterialTheme.typography.subtitle2.merge(
+                        TextStyle(
+                            textAlign = TextAlign.End,
+                            fontFamily = bodyFont,
+                            color = if (MaterialTheme.colors.isLight)
+                                AppColors.upgradeAvailableLight
+                            else AppColors.upgradeAvailableDark
+                        )
+                    )
                 )
             }
 
             DynamicIconButton(
-                backgroundColor = MaterialTheme.colors.onError,
+                backgroundColor = AppColors.deleteButton,
                 modifier = Modifier
                     .size(32.dp),
                 onClickAction = {
@@ -128,7 +138,7 @@ fun TableRowLayout(
                 },
                 iconImage = Icons.TwoTone.Delete,
                 iconSize = 18.dp,
-                iconTint = MaterialTheme.colors.onBackground,
+                iconTint = Color.Black,
                 contentDescription = "Uninstall package button"
             )
         }

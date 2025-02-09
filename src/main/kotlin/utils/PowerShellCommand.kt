@@ -12,7 +12,7 @@ import model.PerformAction
  * Primary command that takes winget as an input and targets the
  * required command
  *
-* */
+ * */
 fun executeCommand(command: String): String {
     println("Executing $command")
     val process = ProcessBuilder("powershell.exe", "-Command", command)
@@ -167,6 +167,7 @@ fun performAction(
                             version = pkg.version.takeIf { it != "Unknown" && it != "winget" } ?: "",
                             availableVersion = pkg.availableVersion
                                 ?.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
+                                ?.replace(Regex("\\s*msstore\\b", RegexOption.IGNORE_CASE), "")
                                 ?.trim()
                                 ?: ""
                         )

@@ -17,8 +17,8 @@ To know more, follow this [link](https://learn.microsoft.com/en-us/windows/packa
 
 ## Screenshots
 
-<img src="static/Screenshot-1.png" width="500" height="500">
-<img src="static/Screenshot-2.png" width="500" height="500">
+<img src="static/Lightmode.png" width="500" height="500">
+<img src="static/Darkmode.png" width="500" height="500">
 
 
 ## Run Locally
@@ -28,7 +28,7 @@ It's recommended to use [IntelliJ Idea IDEA](https://www.jetbrains.com/idea/) to
 Clone the project
 
 ```bash
-  git clone https://github.com/kugchennai/kmp-winget
+  git clone https://github.com/StarkDroid/kmp-winget
 ```
 
 Go to the project directory
