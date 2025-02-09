@@ -6,8 +6,8 @@
 
 A Material theme based package manager crafted for Windows desktop app with the help of Kotlin Multi-Platform and Compose UI, that lets you list, search, upgrade or uninstall packages installed in your system that runs on winget commands in the background. As a bonus, also lets you perform disc cleanup.
 
-
-
+[![Winget releases](https://img.shields.io/badge/Latest_release_download-v1.1.0-blue.svg)](https://github.com/StarkDroid/kmp-winget)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/StarkDroid/kmp-winget/total)
 
 ## Environment Dependency
 
@@ -55,27 +55,28 @@ or you can simply visit the [release]() page to get the latest build
 
 - Light/dark mode toggle
 - List all the installed apps
+- Displays the number of apps
 - Shows installed version of the app
 - Shows available updates for an app
 - One click solution to disc cleanup
 - Search and filter among the list of apps
 - Ability to upgrade an app to its available update
 - Ability to uninstall an app
-
-
-## Roadmap
-
-- [ ] Bring support to linux with the help of apt commands
-- [ ] Improvements to UI with dialog popup loader
-- [ ] Remove MS Store upgrades out of the upgrades list
-- [ ] Implement feature to be able to install apps available via winget
-- [ ] Do some packages list sanitation
+- Dialog Loader popup
 
 ## Tech Stack
 
-**Interface:** Kotlin Multi-Platform, Compose Views, Material3
+**Interface:** Kotlin Multi-Platform, Compose Views, Material UI
 
 **Services:** Winget-CLI
 
-**Platform:** Windows
+**Platform:** Windows 10/11
+
+## Contributors
+
+<a href="https://github.com/StarkDroid/kmp-winget/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=StarkDroid/kmp-winget" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
