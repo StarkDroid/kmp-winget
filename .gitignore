@@ -12,6 +12,7 @@ build/
 .idea/uiDesigner.xml
 .idea/gradle.xml
 .idea/misc.xml
+.idea/AndroidProjectSystem.xml
 *.iws
 *.iml
 *.ipr
