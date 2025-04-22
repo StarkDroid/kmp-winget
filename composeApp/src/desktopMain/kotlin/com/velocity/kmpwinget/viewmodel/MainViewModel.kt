@@ -31,7 +31,7 @@ class MainViewModel(private val packageRepository: IPackageRepository) : ViewMod
         viewModelScope.launch {
             _isLoading.value = OperationResult.Loading
             try {
-                packageRepository.listInstalledPackages().collect { packages ->
+                packageRepository.listInstalledPackages(_showUpgradesOnly.value).collect { packages ->
                     _packages.value = packages
                     _isLoading.value = null
                 }

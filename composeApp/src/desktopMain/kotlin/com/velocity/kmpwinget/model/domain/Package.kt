@@ -15,3 +15,14 @@ data class Package(
 ) {
     val hasUpdate: Boolean get() = !availableVersion.isNullOrEmpty() && availableVersion != version
 }
+
+fun Package.cleanVersions(): Package {
+    return this.copy(
+        version = version.takeIf { it != "Unknown" && it != "winget" } ?: "",
+        availableVersion = availableVersion
+            ?.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
+            ?.replace(Regex("\\s*msstore\\b", RegexOption.IGNORE_CASE), "")
+            ?.trim()
+            ?: ""
+    )
+}

@@ -4,13 +4,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import com.velocity.kmpwinget.model.domain.OperationResult
 import com.velocity.kmpwinget.model.domain.Package
+import com.velocity.kmpwinget.model.domain.cleanVersions
 import com.velocity.kmpwinget.utils.executeCleanupManager
 
 /**
  * Interface for package management operations
  */
 interface IPackageRepository {
-    suspend fun listInstalledPackages(): Flow<List<Package>>
+    suspend fun listInstalledPackages(showUpgradesOnly: Boolean = false): Flow<List<Package>>
     suspend fun searchPackages(query: String): Flow<List<Package>>
     suspend fun upgradePackage(packageId: String): Flow<OperationResult>
     suspend fun uninstallPackage(packageId: String): Flow<OperationResult>
@@ -19,8 +20,10 @@ interface IPackageRepository {
 }
 
 class PackageRepositoryImpl : IPackageRepository {
-    override suspend fun listInstalledPackages(): Flow<List<Package>> = flow {
-        emit(com.velocity.kmpwinget.utils.listInstalledPackages(false))
+    override suspend fun listInstalledPackages(showUpgradesOnly: Boolean): Flow<List<Package>> = flow {
+        val packages = com.velocity.kmpwinget.utils.listInstalledPackages(showUpgradesOnly)
+        .map { it.cleanVersions() }
+        emit(packages)
     }
 
     override suspend fun searchPackages(query: String): Flow<List<Package>> = flow {

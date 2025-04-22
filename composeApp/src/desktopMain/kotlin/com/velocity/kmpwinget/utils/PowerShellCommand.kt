@@ -122,9 +122,9 @@ fun upgradePackage(packageName: String): Boolean {
 fun uninstallPackage(packageName: String): Boolean {
     try {
         val cleanedPackageName = packageName
-            .replace(Regex("\\s*\\d+(\\.\\d+)?\\s*"), " ") // Remove version numbers
-            .replace(Regex("\\s*\\.\\s*"), " ")            // Remove stray dots
-            .trim()                                        // Trim extra spaces
+            .replace(Regex("\\s*\\d+(\\.\\d+)?\\s*"), " ")
+            .replace(Regex("\\s*\\.\\s*"), " ")
+            .trim()
 
         // Escape quotes for safety
         val escapedPackageName = cleanedPackageName.replace("\"", "\\\"")
