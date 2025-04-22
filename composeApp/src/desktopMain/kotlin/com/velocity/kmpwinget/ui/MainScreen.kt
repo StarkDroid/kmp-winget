@@ -74,7 +74,6 @@ fun MainScreen() {
 
                 AppHeader(
                     isDarkMode = isDarkMode,
-                    isLoading = isLoading,
                     onCleanDisk = { viewModel.cleanDisk() }
                 )
 

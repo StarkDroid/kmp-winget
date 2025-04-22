@@ -1,11 +1,13 @@
 package com.velocity.kmpwinget.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -32,18 +34,23 @@ fun DynamicIconButton(
         enabled = isEnabled,
     ) {
         Card(
-            modifier = modifier,
+            modifier = modifier.size(buttonBackgroundSize),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = elevation),
             shape = CircleShape,
             colors = CardDefaults.cardColors(containerColor = backgroundColor),
             border = BorderStroke(1.dp, borderColor)
         ) {
-            Icon(
-                modifier = Modifier.size(iconSize).padding((buttonBackgroundSize - iconSize) / 2),
-                imageVector = iconImage,
-                contentDescription = contentDescription,
-                tint = iconTint
-            )
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    modifier = Modifier.size(iconSize),
+                    imageVector = iconImage,
+                    contentDescription = contentDescription,
+                    tint = iconTint
+                )
+            }
         }
     }
 }

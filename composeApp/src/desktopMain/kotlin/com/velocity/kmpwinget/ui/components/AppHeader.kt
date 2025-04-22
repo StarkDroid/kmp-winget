@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.velocity.kmpwinget.model.domain.OperationResult
 import com.velocity.kmpwinget.theme.AppColors
 import com.velocity.kmpwinget.theme.ThemeState
 import kmp_winget.composeapp.generated.resources.Res
@@ -25,7 +24,6 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun AppHeader(
     isDarkMode: Boolean,
-    isLoading: OperationResult?,
     onCleanDisk: () -> Unit
 ) {
 
@@ -79,7 +77,6 @@ fun AppHeader(
             backgroundColor = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier.size(36.dp),
             onClickAction = onCleanDisk,
-            isEnabled = isLoading == null,
             iconImage = Icons.TwoTone.CleaningServices,
             iconSize = 18.dp,
             iconTint = MaterialTheme.colorScheme.onSecondary,
@@ -92,7 +89,6 @@ fun AppHeader(
             onClickAction = {
                 ThemeState.isDarkMode.value = !isDarkMode
             },
-            isEnabled = isLoading == null,
             iconImage = if (isDarkMode) Icons.TwoTone.WbSunny else Icons.TwoTone.ModeNight,
             iconSize = 18.dp,
             iconTint = MaterialTheme.colorScheme.onBackground,

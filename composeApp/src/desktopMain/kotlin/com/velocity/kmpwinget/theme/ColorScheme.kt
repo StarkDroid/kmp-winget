@@ -19,7 +19,7 @@ val lightColorScheme = lightColorScheme(
     onError = Color(0xFFFF8383),
 )
 
-val Dark = darkColorScheme(
+val darkColorScheme = darkColorScheme(
     primary = Color(0xFF2E236C),
     primaryContainer = Color(0xFF907ce5),
     secondary = Color(0xFFC8ACD6),
