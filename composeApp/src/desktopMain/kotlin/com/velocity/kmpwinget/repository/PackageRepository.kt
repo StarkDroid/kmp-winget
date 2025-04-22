@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.flow
 import com.velocity.kmpwinget.model.domain.OperationResult
 import com.velocity.kmpwinget.model.domain.Package
 import com.velocity.kmpwinget.model.domain.cleanVersions
+import com.velocity.kmpwinget.utils.PowerShellCommand
 import com.velocity.kmpwinget.utils.executeCleanupManager
 
 /**
@@ -12,7 +13,6 @@ import com.velocity.kmpwinget.utils.executeCleanupManager
  */
 interface IPackageRepository {
     suspend fun listInstalledPackages(showUpgradesOnly: Boolean = false): Flow<List<Package>>
-    suspend fun searchPackages(query: String): Flow<List<Package>>
     suspend fun upgradePackage(packageId: String): Flow<OperationResult>
     suspend fun uninstallPackage(packageId: String): Flow<OperationResult>
     suspend fun getPackageDetails(packageId: String): Flow<Package>
@@ -21,19 +21,13 @@ interface IPackageRepository {
 
 class PackageRepositoryImpl : IPackageRepository {
     override suspend fun listInstalledPackages(showUpgradesOnly: Boolean): Flow<List<Package>> = flow {
-        val packages = com.velocity.kmpwinget.utils.listInstalledPackages(showUpgradesOnly)
+        val packages = PowerShellCommand.listInstalledPackages(showUpgradesOnly)
         .map { it.cleanVersions() }
         emit(packages)
     }
 
-    override suspend fun searchPackages(query: String): Flow<List<Package>> = flow {
-        emit(com.velocity.kmpwinget.utils.listInstalledPackages(false).filter {
-            it.name.contains(query, ignoreCase = true) || it.id.contains(query, ignoreCase = true)
-        })
-    }
-
     override suspend fun upgradePackage(packageId: String): Flow<OperationResult> = flow {
-        val result = com.velocity.kmpwinget.utils.upgradePackage(packageId)
+        val result = PowerShellCommand.upgradePackage(packageId)
         if (result) {
             emit(OperationResult.Success("Package $packageId upgraded successfully"))
         } else {
@@ -42,7 +36,7 @@ class PackageRepositoryImpl : IPackageRepository {
     }
 
     override suspend fun uninstallPackage(packageId: String): Flow<OperationResult> = flow {
-        val result = com.velocity.kmpwinget.utils.uninstallPackage(packageId)
+        val result = PowerShellCommand.uninstallPackage(packageId)
         if (result) {
             emit(OperationResult.Success("Package $packageId uninstalled successfully"))
         } else {
@@ -51,7 +45,7 @@ class PackageRepositoryImpl : IPackageRepository {
     }
 
     override suspend fun getPackageDetails(packageId: String): Flow<Package> = flow {
-        val allPackages = com.velocity.kmpwinget.utils.listInstalledPackages(false)
+        val allPackages = PowerShellCommand.listInstalledPackages(false)
         val packageDetails = allPackages.find { it.id == packageId }
         if (packageDetails != null) {
             emit(packageDetails)
