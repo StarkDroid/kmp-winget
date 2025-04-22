@@ -1,0 +1,10 @@
+<resources>
+    <string name="header_title">Package Manager</string>
+    <string name="header_subtitle">Winget</string>
+    <string name="searchbar_placeholder">Search through the installed apps</string>
+    <string name="switch_upgrades_text">Show upgrades only</string>
+    <string name="table_column_name">Name</string>
+    <string name="table_column_version">Version</string>
+    <string name="dialog_loading">Processing Request</string>
+    <string name="dialog_loading_message">Please wait while we load your packages...</string>
+</resources>

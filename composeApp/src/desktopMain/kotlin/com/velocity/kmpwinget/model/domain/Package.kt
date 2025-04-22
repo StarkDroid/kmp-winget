@@ -1,0 +1,17 @@
+package com.velocity.kmpwinget.model.domain
+
+/**
+ * Represents a software package managed by winget
+ */
+data class Package(
+    val id: String,
+    val name: String,
+    val version: String,
+    val availableVersion: String? = null,
+    val description: String? = null,
+    val publisher: String? = null,
+    val installDate: String? = null,
+    val size: String? = null
+) {
+    val hasUpdate: Boolean get() = !availableVersion.isNullOrEmpty() && availableVersion != version
+}
