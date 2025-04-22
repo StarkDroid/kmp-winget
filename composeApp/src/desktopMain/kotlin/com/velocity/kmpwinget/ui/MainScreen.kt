@@ -57,6 +57,7 @@ fun MainScreen() {
     AppTheme {
         if (isLoading != null) {
             LoaderDialog(
+                result = isLoading,
                 onDismiss = { viewModel.clearOperationResult() }
             )
         }

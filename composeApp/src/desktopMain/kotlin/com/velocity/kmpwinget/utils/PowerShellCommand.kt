@@ -1,11 +1,8 @@
 package com.velocity.kmpwinget.utils
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import com.velocity.kmpwinget.model.domain.Package
-import com.velocity.kmpwinget.model.PerformAction
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object PowerShellCommand {
     /**
@@ -14,15 +11,15 @@ object PowerShellCommand {
      * required command
      *
      * */
-    fun executeCommand(command: String): String {
+    suspend fun executeCommand(command: String): String = withContext(Dispatchers.IO) {
         println("Executing $command")
         val process = ProcessBuilder("powershell.exe", "-Command", command)
             .redirectErrorStream(true)
             .start()
 
-        return process.inputStream.bufferedReader().use { it.readText().trim() }.also {
-            process.waitFor()
-        }
+        val result = process.inputStream.bufferedReader().use { it.readText().trim() }
+        process.waitFor()
+        result
     }
 
     /**
@@ -32,7 +29,7 @@ object PowerShellCommand {
      * Needs winget installed in powershell CLI
      *
      * */
-    fun listInstalledPackages(showUpgradesOnly: Boolean): List<Package> {
+    suspend fun listInstalledPackages(showUpgradesOnly: Boolean): List<Package> = withContext(Dispatchers.IO) {
         val command = buildString {
             append("winget list --disable-interactivity")
             if (showUpgradesOnly) {
@@ -41,7 +38,7 @@ object PowerShellCommand {
         }
         val output = executeCommand(command)
         println("Raw Output: $output")
-        return parseWingetList(output)
+        parseWingetList(output)
     }
 
     /**
@@ -99,18 +96,19 @@ object PowerShellCommand {
      * winget upgrade -q "Package Name"
      *
      * */
-    fun upgradePackage(packageName: String): Boolean {
+    suspend fun upgradePackage(packageName: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val escapedPackageName = packageName.replace("\"", "\\\"") // Escape quotes
-            val command = "winget upgrade -q \"$escapedPackageName\" --accept-source-agreements --accept-package-agreements"
+            val command =
+                "winget upgrade -q \"$escapedPackageName\" --accept-source-agreements --accept-package-agreements"
             val output = executeCommand(command)
             println("Upgrade Output for $packageName: $output")
 
-            return output.contains("Successfully installed", ignoreCase = true) ||
+            output.contains("Successfully installed", ignoreCase = true) ||
                     output.contains("No applicable update found", ignoreCase = true)
         } catch (e: Exception) {
             println("Error upgrading package $packageName: ${e.message}")
-            return false
+            false
         }
     }
 
@@ -120,7 +118,7 @@ object PowerShellCommand {
      * winget uninstall -q "Package Name"
      *
      * */
-    fun uninstallPackage(packageName: String): Boolean {
+    suspend fun uninstallPackage(packageName: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val cleanedPackageName = packageName
                 .replace(Regex("\\s*\\d+(\\.\\d+)?\\s*"), " ")
@@ -129,76 +127,15 @@ object PowerShellCommand {
 
             // Escape quotes for safety
             val escapedPackageName = cleanedPackageName.replace("\"", "\\\"")
-
             val command = "winget uninstall -q \"$escapedPackageName\" --accept-source-agreements"
             val output = executeCommand(command)
             println("Uninstall Output for $cleanedPackageName: $output")
 
-            return output.contains("Successfully uninstalled", ignoreCase = true) ||
+            output.contains("Successfully uninstalled", ignoreCase = true) ||
                     output.contains("No installed package found", ignoreCase = true)
         } catch (e: Exception) {
             println("Error uninstalling package $packageName: ${e.message}")
-            return false
-        }
-    }
-
-    /**
-     *
-     * One function to rule them all, this is the function that gets called for
-     * Upgrade / Uninstall / Refresh list actions
-     *
-     * */
-    fun performAction(
-        scope: CoroutineScope,
-        onPackagesLoaded: (List<Package>) -> Unit,
-        setLoading: (Boolean) -> Unit,
-        action: PerformAction = PerformAction.RefreshList,
-        onActionComplete: ((Boolean) -> Unit)? = null,
-        showUpgradesOnly: Boolean = false
-    ) {
-        scope.launch {
-            try {
-                setLoading(true)
-                when(action) {
-                    is PerformAction.RefreshList -> {
-                        val packages = withContext(Dispatchers.IO) {
-                            listInstalledPackages(showUpgradesOnly)
-                        }.map { pkg ->
-                            pkg.copy(
-                                version = pkg.version.takeIf { it != "Unknown" && it != "winget" } ?: "",
-                                availableVersion = pkg.availableVersion
-                                    ?.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
-                                    ?.replace(Regex("\\s*msstore\\b", RegexOption.IGNORE_CASE), "")
-                                    ?.trim()
-                                    ?: ""
-                            )
-                        }
-                        onPackagesLoaded(packages)
-                    }
-
-                    is PerformAction.UpgradePackage -> {
-                        val upgradeResult = withContext(Dispatchers.IO) {
-                            upgradePackage(action.packageName)
-                        }
-                        onActionComplete?.invoke(upgradeResult)
-                    }
-
-                    is PerformAction.UninstallPackage -> {
-                        val uninstallResult = withContext(Dispatchers.IO) {
-                            uninstallPackage(action.packageName)
-                        }
-                        onActionComplete?.invoke(uninstallResult)
-                    }
-                }
-            } catch (e: Exception) {
-                println("Error loading packages: ${e.message}")
-                when (action) {
-                    is PerformAction.RefreshList -> onPackagesLoaded(emptyList())
-                    else -> onActionComplete?.invoke(false)
-                }
-            } finally {
-                setLoading(false)
-            }
+            false
         }
     }
 }

@@ -1,12 +1,12 @@
 package com.velocity.kmpwinget.repository
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import com.velocity.kmpwinget.model.domain.OperationResult
 import com.velocity.kmpwinget.model.domain.Package
 import com.velocity.kmpwinget.model.domain.cleanVersions
 import com.velocity.kmpwinget.utils.PowerShellCommand
 import com.velocity.kmpwinget.utils.executeCleanupManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Interface for package management operations

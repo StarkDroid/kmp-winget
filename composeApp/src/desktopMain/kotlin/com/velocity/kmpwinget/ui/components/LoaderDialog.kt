@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -23,6 +22,7 @@ import com.velocity.kmpwinget.model.domain.OperationResult
 import com.velocity.kmpwinget.theme.AppColors
 import kmp_winget.composeapp.generated.resources.Res
 import kmp_winget.composeapp.generated.resources.dialog_loading
+import kmp_winget.composeapp.generated.resources.dialog_loading_message
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -30,7 +30,8 @@ fun LoaderDialog(
     result: OperationResult? = null,
     onDismiss: () -> Unit = {}
 ) {
-    Dialog(onDismissRequest = {
+    Dialog(
+        onDismissRequest = {
         if (result !is OperationResult.Loading) onDismiss()
     }) {
         val infiniteTransition = rememberInfiniteTransition()
@@ -63,14 +64,7 @@ fun LoaderDialog(
         ) {
             Box(
                 modifier = Modifier
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.background,
-                                MaterialTheme.colorScheme.background
-                            )
-                        )
-                    )
+                    .background(color = MaterialTheme.colorScheme.background)
             ) {
                 Column(
                     modifier = Modifier
@@ -128,7 +122,7 @@ fun LoaderDialog(
                         text = when (result) {
                             is OperationResult.Error -> result.message
                             is OperationResult.Success -> "Operation completed successfully"
-                            else -> stringResource(Res.string.dialog_loading)
+                            else -> stringResource(Res.string.dialog_loading_message)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
