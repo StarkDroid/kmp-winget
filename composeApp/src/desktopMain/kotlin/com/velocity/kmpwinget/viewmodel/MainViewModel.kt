@@ -1,4 +1,5 @@
 package com.velocity.kmpwinget.viewmodel
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -8,6 +9,7 @@ import kotlinx.coroutines.launch
 import com.velocity.kmpwinget.model.domain.OperationResult
 import com.velocity.kmpwinget.model.domain.Package
 import com.velocity.kmpwinget.repository.IPackageRepository
+import com.velocity.kmpwinget.utils.PowerShellCommand
 import kotlinx.coroutines.delay
 
 class MainViewModel(private val packageRepository: IPackageRepository) : ViewModel() {
@@ -19,7 +21,7 @@ class MainViewModel(private val packageRepository: IPackageRepository) : ViewMod
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-    
+
     private val _showUpgradesOnly = MutableStateFlow(false)
     val showUpgradesOnly: StateFlow<Boolean> = _showUpgradesOnly.asStateFlow()
 
@@ -92,13 +94,7 @@ class MainViewModel(private val packageRepository: IPackageRepository) : ViewMod
 
     fun cleanDisk() {
         viewModelScope.launch {
-            _isLoading.value = OperationResult.Loading
-            try {
-                packageRepository.cleanDisk()
-                _isLoading.value = OperationResult.Success("Disk Cleanup launched successfully")
-            } catch (e: Exception) {
-                _isLoading.value = OperationResult.Error("Failed to launch Disk Cleanup: ${e.message}")
-            }
+            PowerShellCommand.executeCommand("cleanmgr")
         }
     }
 

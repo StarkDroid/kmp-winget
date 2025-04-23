@@ -4,7 +4,6 @@ import com.velocity.kmpwinget.model.domain.OperationResult
 import com.velocity.kmpwinget.model.domain.Package
 import com.velocity.kmpwinget.model.domain.cleanVersions
 import com.velocity.kmpwinget.utils.PowerShellCommand
-import com.velocity.kmpwinget.utils.executeCleanupManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -16,7 +15,6 @@ interface IPackageRepository {
     suspend fun upgradePackage(packageId: String): Flow<OperationResult>
     suspend fun uninstallPackage(packageId: String): Flow<OperationResult>
     suspend fun getPackageDetails(packageId: String): Flow<Package>
-    suspend fun cleanDisk(): Boolean
 }
 
 class PackageRepositoryImpl : IPackageRepository {
@@ -52,9 +50,5 @@ class PackageRepositoryImpl : IPackageRepository {
         } else {
             throw Exception("Package not found")
         }
-    }
-
-    override suspend fun cleanDisk(): Boolean {
-        return executeCleanupManager() is OperationResult.Success
     }
 }

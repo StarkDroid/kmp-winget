@@ -10,6 +10,7 @@ import androidx.compose.material.icons.twotone.Download
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -33,8 +34,12 @@ fun TableRowLayout(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.onBackground.copy(0.1f), shape = RoundedCornerShape(4.dp)),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .background(
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.1f),
+                    shape = RoundedCornerShape(4.dp)
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.padding(start = 12.dp)) {
                 Text(

@@ -40,10 +40,6 @@ compose.desktop {
     application {
         mainClass = "com.velocity.kmpwinget.MainKt"
 
-        run {
-            jvmArgs += listOf("-Dapp.version=${project.version}")
-        }
-
         nativeDistributions {
             targetFormats(TargetFormat.Exe)
             packageName = "com.velocity.kmpwinget"

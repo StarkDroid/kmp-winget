@@ -6,5 +6,6 @@
     <string name="table_column_name">Name</string>
     <string name="table_column_version">Version</string>
     <string name="dialog_loading">Processing Request</string>
+    <string name="dialog_update_successful">Update Completed Successfully</string>
     <string name="dialog_loading_message">Please wait while we load your packages...</string>
 </resources>

@@ -1,7 +1,6 @@
 package com.velocity.kmpwinget.ui.components
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +22,7 @@ import com.velocity.kmpwinget.theme.AppColors
 import kmp_winget.composeapp.generated.resources.Res
 import kmp_winget.composeapp.generated.resources.dialog_loading
 import kmp_winget.composeapp.generated.resources.dialog_loading_message
+import kmp_winget.composeapp.generated.resources.dialog_update_successful
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -32,8 +32,8 @@ fun LoaderDialog(
 ) {
     Dialog(
         onDismissRequest = {
-        if (result !is OperationResult.Loading) onDismiss()
-    }) {
+            if (result !is OperationResult.Loading) onDismiss()
+        }) {
         val infiniteTransition = rememberInfiniteTransition()
 
         val rotation by infiniteTransition.animateFloat(
@@ -62,84 +62,81 @@ fun LoaderDialog(
             elevation = CardDefaults.elevatedCardElevation(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            Box(
+
+
+            Column(
                 modifier = Modifier
-                    .background(color = MaterialTheme.colorScheme.background)
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(
+                val (icon, tint, needsAnimation) = when (result) {
+                    is OperationResult.Success -> Triple(
+                        Icons.Filled.CheckCircle,
+                        AppColors.upgradeAvailableLight,
+                        false
+                    )
+
+                    is OperationResult.Error -> Triple(
+                        Icons.Filled.Error,
+                        AppColors.deleteButton,
+                        false
+                    )
+
+                    else -> Triple(
+                        Icons.Filled.Refresh,
+                        MaterialTheme.colorScheme.primaryContainer,
+                        true
+                    )
+                }
+
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
                     modifier = Modifier
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    val (icon, tint, needsAnimation) = when (result) {
-                        is OperationResult.Success -> Triple(
-                            Icons.Filled.CheckCircle,
-                            AppColors.upgradeAvailableLight,
-                            false
-                        )
+                        .size(48.dp)
+                        .let {
+                            if (needsAnimation) {
+                                it.rotate(rotation).alpha(scale)
+                            } else {
+                                it
+                            }
+                        },
+                    tint = tint
+                )
 
-                        is OperationResult.Error -> Triple(
-                            Icons.Filled.Error,
-                            AppColors.deleteButton,
-                            false
-                        )
+                Text(
+                    text = when (result) {
+                        is OperationResult.Success -> result.message
+                        is OperationResult.Error -> "Error"
+                        else -> stringResource(Res.string.dialog_loading)
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-                        else -> Triple(
-                            Icons.Filled.Refresh,
-                            MaterialTheme.colorScheme.primaryContainer,
-                            true
-                        )
-                    }
+                Text(
+                    text = when (result) {
+                        is OperationResult.Error -> result.message
+                        is OperationResult.Success -> stringResource(Res.string.dialog_update_successful)
+                        else -> stringResource(Res.string.dialog_loading_message)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.alpha(if (needsAnimation) scale else 1f)
+                )
 
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
+                if (result is OperationResult.Loading) {
+                    LinearProgressIndicator(
                         modifier = Modifier
-                            .size(48.dp)
-                            .let {
-                                if (needsAnimation) {
-                                    it.rotate(rotation).alpha(scale)
-                                } else {
-                                    it
-                                }
-                            },
-                        tint = tint
+                            .fillMaxWidth()
+                            .height(4.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                        strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
                     )
-
-                    Text(
-                        text = when (result) {
-                            is OperationResult.Success -> result.message
-                            is OperationResult.Error -> "Error"
-                            else -> stringResource(Res.string.dialog_loading)
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Text(
-                        text = when (result) {
-                            is OperationResult.Error -> result.message
-                            is OperationResult.Success -> "Operation completed successfully"
-                            else -> stringResource(Res.string.dialog_loading_message)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.alpha(if (needsAnimation) scale else 1f)
-                    )
-
-                    if (result is OperationResult.Loading) {
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            trackColor = ProgressIndicatorDefaults.linearTrackColor,
-                            strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
-                        )
-                    }
                 }
             }
         }

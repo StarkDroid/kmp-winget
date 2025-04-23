@@ -110,7 +110,7 @@ fun MainScreen() {
                         )
                         Box(
                             modifier = Modifier
-                                .padding(start = 8.dp, top = 8.dp)
+                                .padding(start = 8.dp)
                                 .background(
                                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                                     shape = RoundedCornerShape(8.dp)
@@ -131,7 +131,7 @@ fun MainScreen() {
                     ) {
                         Text(
                             text = stringResource(Res.string.table_column_version),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }

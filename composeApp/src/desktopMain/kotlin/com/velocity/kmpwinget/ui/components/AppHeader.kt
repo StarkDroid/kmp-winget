@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.velocity.kmpwinget.theme.AppColors
 import com.velocity.kmpwinget.theme.ThemeState
+import com.velocity.kmpwinget.utils.BuildConfig
 import kmp_winget.composeapp.generated.resources.Res
 import kmp_winget.composeapp.generated.resources.header_subtitle
 import kmp_winget.composeapp.generated.resources.header_title
@@ -64,7 +65,7 @@ fun AppHeader(
                 )
 
                 Text(
-                    text = "v".plus(System.getProperty("app.version")),
+                    text = "v" + BuildConfig.VERSION,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 )
