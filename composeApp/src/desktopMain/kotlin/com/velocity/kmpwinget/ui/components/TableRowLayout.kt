@@ -1,12 +1,15 @@
 package com.velocity.kmpwinget.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Download
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +26,9 @@ import com.velocity.kmpwinget.theme.AppColors
 @Composable
 fun TableRowLayout(
     pkg: Package,
+    isSelected: Boolean = false,
+    isMultiSelectMode: Boolean = false,
+    onSelect: () -> Unit = {},
     onUpgrade: () -> Unit,
     onUninstall: () -> Unit
 ) {
@@ -35,13 +41,30 @@ fun TableRowLayout(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = MaterialTheme.colorScheme.onBackground.copy(0.1f),
+                    color = if (isSelected && isMultiSelectMode)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    else
+                        MaterialTheme.colorScheme.onBackground.copy(0.1f),
                     shape = RoundedCornerShape(4.dp)
-                ),
+                )
+                .clickable(enabled = isMultiSelectMode) { onSelect() },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.padding(start = 12.dp)) {
+
+            if (isMultiSelectMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onSelect() },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.primaryContainer,
+                        uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    ),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+            Column(modifier = Modifier.padding(start = if (isMultiSelectMode) 4.dp else 12.dp)) {
                 Text(
                     text = pkg.name,
                     style = MaterialTheme.typography.bodyMedium,
@@ -59,11 +82,10 @@ fun TableRowLayout(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            if (pkg.hasUpdate) {
+            if (pkg.hasUpdate && !isMultiSelectMode) {
                 DynamicIconButton(
                     backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier
-                        .size(32.dp),
+                    modifier = Modifier.size(32.dp),
                     onClickAction = onUpgrade,
                     iconImage = Icons.TwoTone.Download,
                     iconSize = 18.dp,
@@ -98,16 +120,17 @@ fun TableRowLayout(
                 )
             }
 
-            DynamicIconButton(
-                backgroundColor = AppColors.deleteButton,
-                modifier = Modifier
-                    .size(32.dp),
-                onClickAction = onUninstall,
-                iconImage = Icons.TwoTone.Delete,
-                iconSize = 18.dp,
-                iconTint = Color.Black,
-                contentDescription = "Uninstall package button"
-            )
+            if (!isMultiSelectMode) {
+                DynamicIconButton(
+                    backgroundColor = AppColors.deleteButton,
+                    modifier = Modifier.size(32.dp),
+                    onClickAction = onUninstall,
+                    iconImage = Icons.TwoTone.Delete,
+                    iconSize = 18.dp,
+                    iconTint = Color.Black,
+                    contentDescription = "Uninstall package button"
+                )
+            }
         }
     }
 }

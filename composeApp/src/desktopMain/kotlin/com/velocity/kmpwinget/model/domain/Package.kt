@@ -11,7 +11,8 @@ data class Package(
     val description: String? = null,
     val publisher: String? = null,
     val installDate: String? = null,
-    val size: String? = null
+    val size: String? = null,
+    val isSelected: Boolean = false
 ) {
     val hasUpdate: Boolean get() = !availableVersion.isNullOrEmpty() && availableVersion != version
 }

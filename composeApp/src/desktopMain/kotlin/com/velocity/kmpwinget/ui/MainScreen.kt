@@ -10,15 +10,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Cancel
+import androidx.compose.material.icons.twotone.Delete
+import androidx.compose.material.icons.twotone.Download
+import androidx.compose.material.icons.twotone.SelectAll
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.velocity.kmpwinget.theme.AppColors
 import com.velocity.kmpwinget.theme.AppTheme
 import com.velocity.kmpwinget.theme.ThemeState
 import com.velocity.kmpwinget.ui.components.AppHeader
@@ -41,6 +46,8 @@ fun MainScreen() {
     val isLoading by viewModel.isLoading.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val showUpgradesOnly by viewModel.showUpgradesOnly.collectAsState()
+    val isMultiSelectMode by viewModel.isMultiSelectMode.collectAsState()
+    val selectedPackageIds by viewModel.selectedPackageIds.collectAsState()
 
     val listState = rememberLazyListState()
     val isDarkMode = ThemeState.isDarkMode.value
@@ -72,7 +79,6 @@ fun MainScreen() {
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
             ) {
-
                 AppHeader(
                     isDarkMode = isDarkMode,
                     onCleanDisk = { viewModel.cleanDisk() }
@@ -123,6 +129,82 @@ fun MainScreen() {
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                             )
                         }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        OutlinedButton(
+                            modifier = Modifier.height(32.dp),
+                            onClick = { viewModel.toggleMultiSelectMode() },
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            shape = RoundedCornerShape(4.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                        ) {
+                            Icon(
+                                imageVector = if (isMultiSelectMode)
+                                    Icons.TwoTone.Cancel
+                                else
+                                    Icons.TwoTone.SelectAll,
+                                contentDescription = "Toggle select mode",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = if (isMultiSelectMode) "Cancel" else "Select")
+                        }
+
+
+                        if (isMultiSelectMode && selectedPackageIds.isNotEmpty()) {
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Button(
+                                onClick = { viewModel.upgradeSelectedPackages() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondary
+                                ),
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.TwoTone.Download,
+                                    contentDescription = "Upgrade selected",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = "Update (${selectedPackageIds.size})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Button(
+                                onClick = { viewModel.uninstallSelectedPackages() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = AppColors.deleteButton,
+                                    contentColor = MaterialTheme.colorScheme.onSecondary
+                                ),
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.TwoTone.Delete,
+                                    contentDescription = "Uninstall selected",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = "Uninstall (${selectedPackageIds.size})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
 
                     Box(
@@ -148,10 +230,14 @@ fun MainScreen() {
                         modifier = Modifier.fillMaxSize().padding(end = 12.dp)
                     ) {
                         items(
-                            items = filteredPackages
+                            items = filteredPackages,
+                            key = { it.id }
                         ) { pkg ->
                             TableRowLayout(
                                 pkg = pkg,
+                                isSelected = viewModel.isPackageSelected(pkg.id),
+                                isMultiSelectMode = isMultiSelectMode,
+                                onSelect = { viewModel.togglePackageSelection(pkg.id) },
                                 onUpgrade = { viewModel.upgradePackage(pkg.id) },
                                 onUninstall = { viewModel.uninstallPackage(pkg.id) }
                             )
