@@ -52,34 +52,34 @@ object PowerShellCommand {
             .drop(2)
             .filter { it.isNotBlank() }
             .mapNotNull { line ->
+            try {
                 val parts = line.split(Regex("\\s{2,}"))
-
+                
                 if (parts.size >= 3) {
                     val name = parts[0].trim()
                     val idAndVersion = parts[1].trim()
                     val version = parts[2].trim()
                     var availableVersion: String? = null
-
+                    
                     if (parts.size > 3) {
-                        val potentialAvailable = parts[3].trim()
-                        availableVersion = potentialAvailable
+                        availableVersion = parts[3].trim()
                     }
-
+                    
                     if (idAndVersion.last().isDigit() && version.isEmpty()) {
                         val lastSpaceIndex = idAndVersion.indexOfLast { it.isWhitespace() }
                         val extractedVersion = idAndVersion.substring(lastSpaceIndex + 1).trim()
                         val extractedId = idAndVersion.substring(0, lastSpaceIndex).trim()
-
+                        
                         Package(
                             name = name,
-                            id = extractedId,
+                            id = extractedId.take(100),
                             version = extractedVersion,
                             availableVersion = availableVersion
                         )
                     } else {
                         Package(
                             name = name,
-                            id = idAndVersion,
+                            id = idAndVersion.take(100),
                             version = version,
                             availableVersion = availableVersion
                         )
@@ -87,8 +87,12 @@ object PowerShellCommand {
                 } else {
                     null
                 }
+            } catch (e: Exception) {
+                println("Error parsing package line: $line - ${e.message}")
+                null
             }
-    }
+        }
+}
 
     /**
      *

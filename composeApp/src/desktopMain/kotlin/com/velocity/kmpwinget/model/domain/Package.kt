@@ -1,5 +1,7 @@
 package com.velocity.kmpwinget.model.domain
 
+import java.util.UUID
+
 /**
  * Represents a software package managed by winget
  */
@@ -12,7 +14,8 @@ data class Package(
     val publisher: String? = null,
     val installDate: String? = null,
     val size: String? = null,
-    val isSelected: Boolean = false
+    val isSelected: Boolean = false,
+    val uniqueId: String = UUID.randomUUID().toString()
 ) {
     val hasUpdate: Boolean get() = !availableVersion.isNullOrEmpty() && availableVersion != version
 }

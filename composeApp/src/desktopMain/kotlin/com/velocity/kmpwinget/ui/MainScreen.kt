@@ -231,7 +231,7 @@ fun MainScreen() {
                     ) {
                         items(
                             items = filteredPackages,
-                            key = { it.id }
+                            key = { pkg -> pkg.uniqueId }
                         ) { pkg ->
                             TableRowLayout(
                                 pkg = pkg,
