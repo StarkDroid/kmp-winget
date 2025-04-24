@@ -43,11 +43,14 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Exe)
             packageName = "kmpwinget"
+            vendor = "Trishiraj"
             packageVersion = project.version.toString()
-            description = "Compose Multiplatform based windows app for winget GUI package manager"
-            copyright = "© 2024 Trishiraj. All rights reserved."
+            description = "A Package manager app made with kotlin multiplatform for windows that leverages Winget"
+            copyright = "© 2024 - 25 Trishiraj. All rights reserved."
             windows {
                 iconFile.set(project.file("kmp-winget.ico"))
+                upgradeUuid = "996e0739-7f6b-4022-b35a-8aef171389a0"
+                dirChooser = true
                 menuGroup = "KMP Winget"
                 shortcut = true
                 menu = true
