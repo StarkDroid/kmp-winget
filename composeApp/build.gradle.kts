@@ -42,12 +42,22 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Exe)
-            packageName = "com.velocity.kmpwinget"
+            packageName = "kmpwinget"
             packageVersion = project.version.toString()
             description = "Compose Multiplatform based windows app for winget GUI package manager"
             copyright = "© 2024 Trishiraj. All rights reserved."
             windows {
                 iconFile.set(project.file("kmp-winget.ico"))
+                menuGroup = "KMP Winget"
+                shortcut = true
+                menu = true
+            }
+
+            buildTypes.release.proguard {
+                isEnabled = true
+                optimize = true
+                obfuscate = true
+                configurationFiles.from("src/desktopMain/proguard-rules.pro")
             }
         }
     }
