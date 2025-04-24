@@ -28,6 +28,7 @@ fun TableRowLayout(
     pkg: Package,
     isSelected: Boolean = false,
     isMultiSelectMode: Boolean = false,
+    isDarkMode: Boolean,
     onSelect: () -> Unit = {},
     onUpgrade: () -> Unit,
     onUninstall: () -> Unit
@@ -109,14 +110,10 @@ fun TableRowLayout(
 
                 Text(
                     text = pkg.availableVersion ?: "",
-                    style = MaterialTheme.typography.bodyMedium.merge(
-                        TextStyle(
-                            textAlign = TextAlign.End,
-                            color = if (isSystemInDarkTheme().not())
-                                AppColors.upgradeAvailableLight
-                            else AppColors.upgradeAvailableDark
-                        )
-                    )
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isDarkMode)
+                        AppColors.upgradeAvailableDark
+                    else AppColors.upgradeAvailableLight
                 )
             }
 

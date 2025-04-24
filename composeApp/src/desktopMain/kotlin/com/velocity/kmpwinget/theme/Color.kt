@@ -9,7 +9,7 @@ object AppColors {
     val headerWingetTextColorLight = Color(0xFF0A5EB0)
     val headerWingetTextColorDark = Color(0xFF0D92F4)
 
-    val upgradeAvailableLight = Color(0xFF10B981)
+    val upgradeAvailableLight = Color(0xff157047)
     val upgradeAvailableDark = Color(0xFF34D399)
 
     val deleteButton = Color(0xFFFF8383)

@@ -237,6 +237,7 @@ fun MainScreen() {
                                 pkg = pkg,
                                 isSelected = viewModel.isPackageSelected(pkg.id),
                                 isMultiSelectMode = isMultiSelectMode,
+                                isDarkMode = isDarkMode,
                                 onSelect = { viewModel.togglePackageSelection(pkg.id) },
                                 onUpgrade = { viewModel.upgradePackage(pkg.id) },
                                 onUninstall = { viewModel.uninstallPackage(pkg.id) }
