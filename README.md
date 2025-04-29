@@ -6,7 +6,7 @@
 
 A Material theme based package manager crafted for Windows desktop app with the help of Kotlin Multi-Platform and Compose UI, that lets you list, search, upgrade or uninstall packages installed in your system that runs on winget commands in the background. As a bonus, also lets you perform disc cleanup.
 
-[![Winget releases](https://img.shields.io/badge/Latest_release_download-v1.1.0-blue.svg)](https://github.com/StarkDroid/kmp-winget)
+[![Winget releases](https://img.shields.io/badge/Latest_release_download-v2.1.0-blue.svg)](https://github.com/StarkDroid/kmp-winget)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/StarkDroid/kmp-winget/total)
 
 ## Environment Dependency
