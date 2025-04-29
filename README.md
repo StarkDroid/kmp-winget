@@ -62,7 +62,8 @@ or you can simply visit the [release]() page to get the latest build
 - Search and filter among the list of apps
 - Ability to upgrade an app to its available update
 - Ability to uninstall an app
-- Dialog Loader popup
+- Batch action to update / uninstall multiple apps at once
+- Intuitie state based dialog Loader popup
 
 ## Tech Stack
 
