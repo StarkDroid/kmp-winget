@@ -31,6 +31,8 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.jna)
+            implementation(libs.jna.platform)
         }
     }
 }

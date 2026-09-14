@@ -4,6 +4,7 @@ compose-multiplatform = "1.7.3"
 kotlin = "2.1.10"
 kotlinx-coroutines = "1.10.1"
 koin-version = "4.0.3"
+jna = "5.16.0"
 
 [libraries]
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
@@ -12,6 +13,8 @@ kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-co
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin-version" }
 koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin-version" }
 koin-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin-version" }
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
+jna-platform = { group = "net.java.dev.jna", name = "jna-platform", version.ref = "jna" }
 
 [plugins]
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
