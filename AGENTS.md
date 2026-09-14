@@ -7,6 +7,14 @@
 
 ---
 
+## Git & GitHub Workflow Practices
+- **Logical Staging & Commits**: Break down changes into granular, logical commit chunks scoped to individual functional and architectural layers (e.g., config, domain, data, presentation, UI).
+- **Verified GPG Commits**: Always create signed commits (`git commit -S`) using the configured user GPG key so that commits show with the "Verified" badge on GitHub.
+- **Commit Message Format**: Follow standard imperative style (e.g., `Add JNA dependencies and update build configuration`). Keep subject lines concise (≤50 characters), capitalized, without trailing punctuation, and omit bodies unless non-obvious context is required.
+- **Pre-Commit Verification**: Always run full build checks (`./gradlew build`) and diagnostic scans before staging and committing.
+
+---
+
 ## Project Overview & Tech Stack
 - **Project Type**: Kotlin Multiplatform Desktop Application targeting Windows 10 & 11.
 - **UI Framework**: Jetpack Compose Multiplatform (Compose Desktop 1.7.3 / Material 3).
