@@ -1,6 +1,9 @@
 package com.velocity.kmpwinget.ui
 
-import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
@@ -10,65 +13,75 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.Cancel
-import androidx.compose.material.icons.twotone.Delete
-import androidx.compose.material.icons.twotone.Download
-import androidx.compose.material.icons.twotone.SelectAll
-import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.velocity.kmpwinget.domain.model.NavigationTab
+import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.theme.AppColors
 import com.velocity.kmpwinget.theme.AppTheme
 import com.velocity.kmpwinget.theme.ThemeState
-import com.velocity.kmpwinget.ui.components.AppHeader
-import com.velocity.kmpwinget.ui.components.LoaderDialog
-import com.velocity.kmpwinget.ui.components.SearchBar
-import com.velocity.kmpwinget.ui.components.TableRowLayout
+import com.velocity.kmpwinget.theme.islandContainer
+import com.velocity.kmpwinget.ui.components.*
+import com.velocity.kmpwinget.viewmodel.MainUiIntent
 import com.velocity.kmpwinget.viewmodel.MainViewModel
-import kmp_winget.composeapp.generated.resources.Res
-import kmp_winget.composeapp.generated.resources.table_column_name
-import kmp_winget.composeapp.generated.resources.table_column_version
-import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
-@Preview
 fun MainScreen() {
     val viewModel = koinInject<MainViewModel>()
+    val uiState by viewModel.uiState.collectAsState()
 
-    val packages by viewModel.packages.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val showUpgradesOnly by viewModel.showUpgradesOnly.collectAsState()
-    val isMultiSelectMode by viewModel.isMultiSelectMode.collectAsState()
-    val selectedPackageIds by viewModel.selectedPackageIds.collectAsState()
-
-    val listState = rememberLazyListState()
     val isDarkMode = ThemeState.isDarkMode.value
+    val listState = rememberLazyListState()
 
-    val filteredPackages = packages.filter {
-        it.name.contains(searchQuery, ignoreCase = true) ||
-                it.id.contains(searchQuery, ignoreCase = true)
-    }
-
-    val refreshPackages = {
-        viewModel.loadPackages()
-    }
-
-    AppTheme {
-        if (isLoading != null) {
-            LoaderDialog(
-                result = isLoading,
-                onDismiss = { viewModel.clearOperationResult() }
+    AppTheme(isDarkTheme = isDarkMode) {
+        // Operation Progress & Live Logs Modal Dialog
+        if (uiState.operationResult !is OperationResult.Idle) {
+            OperationDialog(
+                result = uiState.operationResult,
+                isDarkMode = isDarkMode,
+                onDismiss = { viewModel.onIntent(MainUiIntent.ClearOperationResult) }
             )
         }
 
+        // Single Package Uninstall Confirmation Dialog
+        if (uiState.packageToConfirmUninstall != null) {
+            ConfirmUninstallDialog(
+                pkg = uiState.packageToConfirmUninstall,
+                isBatch = false,
+                isDarkMode = isDarkMode,
+                onConfirm = {
+                    uiState.packageToConfirmUninstall?.let {
+                        viewModel.onIntent(MainUiIntent.ConfirmUninstall(it))
+                    }
+                },
+                onDismiss = { viewModel.onIntent(MainUiIntent.DismissUninstallConfirm) }
+            )
+        }
+
+        // Batch Uninstall Confirmation Dialog
+        if (uiState.batchUninstallConfirm && uiState.selectedCount > 0) {
+            ConfirmUninstallDialog(
+                pkg = null,
+                isBatch = true,
+                batchCount = uiState.selectedCount,
+                isDarkMode = isDarkMode,
+                onConfirm = { viewModel.onIntent(MainUiIntent.ConfirmBatchUninstall) },
+                onDismiss = { viewModel.onIntent(MainUiIntent.DismissBatchUninstallConfirm) }
+            )
+        }
+
+        // Main Background Canvas
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -77,186 +90,187 @@ fun MainScreen() {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                AppHeader(
+                // Island 1: App Header Island
+                AppHeaderIsland(
                     isDarkMode = isDarkMode,
-                    onCleanDisk = { viewModel.cleanDisk() }
+                    wingetVersion = uiState.systemStats.wingetVersion,
+                    onCleanDisk = { viewModel.onIntent(MainUiIntent.LaunchDiskCleanup) }
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = { viewModel.searchPackages(it) },
-                    showUpgradesOnly = showUpgradesOnly,
-                    onToggleUpgradesOnly = {
-                        viewModel.toggleUpgradesOnly(it)
-                    },
-                    isLoading = isLoading,
-                    onRefreshPackages = refreshPackages
+                // Island 2: Navigation & Controls Island (Tabs with Luminous Underglow + Search/Filters)
+                NavControlsIsland(
+                    activeTab = uiState.activeTab,
+                    totalInstalled = uiState.totalInstalledCount,
+                    updatesAvailable = uiState.updatesCount,
+                    query = uiState.searchQuery,
+                    onQueryChange = { viewModel.onIntent(MainUiIntent.UpdateSearchQuery(it)) },
+                    sourceFilter = uiState.sourceFilter,
+                    onSourceFilterChange = { viewModel.onIntent(MainUiIntent.ChangeSourceFilter(it)) },
+                    sortOption = uiState.sortOption,
+                    onSortOptionChange = { viewModel.onIntent(MainUiIntent.ChangeSortOption(it)) },
+                    isMultiSelectMode = uiState.isMultiSelectMode,
+                    onToggleMultiSelect = { viewModel.onIntent(MainUiIntent.ToggleMultiSelectMode) },
+                    isRefreshing = uiState.isRefreshing,
+                    isDarkMode = isDarkMode,
+                    onTabSelected = { viewModel.onIntent(MainUiIntent.ChangeTab(it)) },
+                    onRefresh = { viewModel.onIntent(MainUiIntent.Refresh(force = true)) }
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.table_column_name),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                        ) {
-                            Text(
-                                text = "${filteredPackages.size}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        OutlinedButton(
-                            modifier = Modifier.height(32.dp),
-                            onClick = { viewModel.toggleMultiSelectMode() },
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                            shape = RoundedCornerShape(4.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                        ) {
-                            Icon(
-                                imageVector = if (isMultiSelectMode)
-                                    Icons.TwoTone.Cancel
-                                else
-                                    Icons.TwoTone.SelectAll,
-                                contentDescription = "Toggle select mode",
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = if (isMultiSelectMode) "Cancel" else "Select")
-                        }
-
-
-                        if (isMultiSelectMode && selectedPackageIds.isNotEmpty()) {
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Button(
-                                onClick = { viewModel.upgradeSelectedPackages() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondary
-                                ),
-                                contentPadding = PaddingValues(horizontal = 8.dp),
-                                shape = RoundedCornerShape(4.dp),
-                                modifier = Modifier.height(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.TwoTone.Download,
-                                    contentDescription = "Upgrade selected",
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = "Update (${selectedPackageIds.size})",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Button(
-                                onClick = { viewModel.uninstallSelectedPackages() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = AppColors.deleteButton,
-                                    contentColor = MaterialTheme.colorScheme.onSecondary
-                                ),
-                                contentPadding = PaddingValues(horizontal = 8.dp),
-                                shape = RoundedCornerShape(4.dp),
-                                modifier = Modifier.height(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.TwoTone.Delete,
-                                    contentDescription = "Uninstall selected",
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = "Uninstall (${selectedPackageIds.size})",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.table_column_version),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                )
-
-                Box(modifier = Modifier.fillMaxSize()) {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize().padding(end = 12.dp)
-                    ) {
-                        items(
-                            items = filteredPackages,
-                            key = { pkg -> pkg.uniqueId }
-                        ) { pkg ->
-                            TableRowLayout(
-                                pkg = pkg,
-                                isSelected = viewModel.isPackageSelected(pkg.id),
-                                isMultiSelectMode = isMultiSelectMode,
+                // Island 3: Main Data Content Island (Table Rows or System Tools)
+                AnimatedContent(
+                    targetState = uiState.activeTab,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "mainIslandContent",
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                ) { targetTab ->
+                    when (targetTab) {
+                        NavigationTab.SYSTEM_TOOLS -> {
+                            SystemToolsIsland(
+                                stats = uiState.systemStats,
                                 isDarkMode = isDarkMode,
-                                onSelect = { viewModel.togglePackageSelection(pkg.id) },
-                                onUpgrade = { viewModel.upgradePackage(pkg.id) },
-                                onUninstall = { viewModel.uninstallPackage(pkg.id) }
+                                onLaunchDiskCleanup = { viewModel.onIntent(MainUiIntent.LaunchDiskCleanup) },
+                                onOptimizeWinget = { viewModel.onIntent(MainUiIntent.OptimizeSystem) }
                             )
                         }
-                    }
+                        NavigationTab.ALL_PACKAGES, NavigationTab.UPGRADES_AVAILABLE -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .islandContainer(shape = RoundedCornerShape(16.dp), isDarkMode = isDarkMode)
+                            ) {
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    // Table Column Header Row
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = "Package",
+                                                style = MaterialTheme.typography.labelMedium.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(
+                                                        color = if (isDarkMode) AppColors.primaryContainerDark else AppColors.primaryContainerLight,
+                                                        shape = RoundedCornerShape(10.dp)
+                                                    )
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = "${uiState.displayedPackages.size}",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 11.sp,
+                                                        color = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
+                                                    )
+                                                )
+                                            }
+                                        }
 
-                    VerticalScrollbar(
-                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                        adapter = rememberScrollbarAdapter(scrollState = listState),
-                        style = ScrollbarStyle(
-                            shape = RoundedCornerShape(4.dp),
-                            minimalHeight = 40.dp,
-                            thickness = 8.dp,
-                            unhoverColor = MaterialTheme.colorScheme.onSurface.copy(0.3f),
-                            hoverColor = MaterialTheme.colorScheme.onSurface.copy(0.7f),
-                            hoverDurationMillis = 150
-                        )
-                    )
+                                        Text(
+                                            text = if (targetTab == NavigationTab.UPGRADES_AVAILABLE) "Available Version" else "Installed Version",
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            ),
+                                            modifier = Modifier.padding(end = if (uiState.isMultiSelectMode) 12.dp else 80.dp)
+                                        )
+                                    }
+
+                                    HorizontalDivider(
+                                        thickness = 1.dp,
+                                        color = if (isDarkMode) AppColors.islandStrokeDark else AppColors.islandStrokeLight
+                                    )
+
+                                    // Table Content
+                                    if (uiState.displayedPackages.isEmpty() && !uiState.isRefreshing) {
+                                        EmptyStateView(
+                                            activeTab = targetTab,
+                                            searchQuery = uiState.searchQuery,
+                                            isDarkMode = isDarkMode,
+                                            onClearSearch = { viewModel.onIntent(MainUiIntent.UpdateSearchQuery("")) }
+                                        )
+                                    } else {
+                                        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                            LazyColumn(
+                                                state = listState,
+                                                modifier = Modifier.fillMaxSize().padding(end = 6.dp),
+                                                contentPadding = PaddingValues(bottom = if (uiState.isMultiSelectMode) 76.dp else 8.dp)
+                                            ) {
+                                                items(
+                                                    items = uiState.displayedPackages,
+                                                    key = { pkg -> pkg.uniqueId }
+                                                ) { pkg ->
+                                                    PackageTableRow(
+                                                        pkg = pkg,
+                                                        isSelected = uiState.selectedPackageIds.contains(pkg.id),
+                                                        isMultiSelectMode = uiState.isMultiSelectMode,
+                                                        isDarkMode = isDarkMode,
+                                                        onSelect = {
+                                                            viewModel.onIntent(
+                                                                MainUiIntent.TogglePackageSelection(pkg.id)
+                                                            )
+                                                        },
+                                                        onUpgrade = {
+                                                            viewModel.onIntent(MainUiIntent.RequestUpgrade(pkg))
+                                                        },
+                                                        onUninstall = {
+                                                            viewModel.onIntent(MainUiIntent.RequestUninstall(pkg))
+                                                        }
+                                                    )
+                                                }
+                                            }
+
+                                            VerticalScrollbar(
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterEnd)
+                                                    .fillMaxHeight()
+                                                    .padding(end = 4.dp, top = 4.dp, bottom = 4.dp),
+                                                adapter = rememberScrollbarAdapter(scrollState = listState),
+                                                style = ScrollbarStyle(
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    minimalHeight = 40.dp,
+                                                    thickness = 6.dp,
+                                                    unhoverColor = if (isDarkMode) Color(0x26FFFFFF) else Color(0x1F000000),
+                                                    hoverColor = if (isDarkMode) AppColors.primaryDark.copy(alpha = 0.8f) else AppColors.primaryLight.copy(alpha = 0.8f),
+                                                    hoverDurationMillis = 150
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Selection Bar at the bottom of the Island
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .fillMaxWidth()
+                                ) {
+                                    SelectionBarIsland(
+                                        isVisible = uiState.isMultiSelectMode,
+                                        selectedCount = uiState.selectedCount,
+                                        isAllSelected = uiState.isAllSelected,
+                                        isDarkMode = isDarkMode,
+                                        onSelectAllToggle = { viewModel.onIntent(MainUiIntent.SelectAllDisplayed) },
+                                        onBatchUpgrade = { viewModel.onIntent(MainUiIntent.RequestBatchUpgrade) },
+                                        onBatchUninstall = { viewModel.onIntent(MainUiIntent.RequestBatchUninstall) },
+                                        onCancel = { viewModel.onIntent(MainUiIntent.ToggleMultiSelectMode) }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
