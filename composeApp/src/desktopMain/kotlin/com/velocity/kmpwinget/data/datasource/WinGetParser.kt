@@ -3,6 +3,13 @@ package com.velocity.kmpwinget.data.datasource
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageSource
 
+data class PackageDetails(
+    val id: String,
+    val name: String,
+    val version: String,
+    val publisher: String? = null
+)
+
 object WinGetParser {
 
     private data class ColumnPos(val name: String, val start: Int)
@@ -17,7 +24,7 @@ object WinGetParser {
         val headerIndex = lines.indexOfFirst { line ->
             line.contains("Name", ignoreCase = true) &&
                     (line.contains("Id", ignoreCase = true) || line.contains("ID")) &&
-                    line.contains("Version", ignoreCase = true)
+                    (line.contains("Version", ignoreCase = true) || line.contains("Source", ignoreCase = true))
         }
 
         if (headerIndex == -1 || headerIndex + 1 >= lines.size) {
@@ -93,6 +100,38 @@ object WinGetParser {
         }
 
         return packages
+    }
+
+    /**
+     * Parses the output of `winget show` to extract exact package details (full untruncated ID and version).
+     */
+    fun parseShowOutput(output: String): PackageDetails? {
+        if (output.isBlank()) return null
+        val lines = output.lines()
+
+        // Single package matched: "Found <Name> [<Id>]"
+        val foundLine = lines.firstOrNull { it.startsWith("Found ", ignoreCase = true) }
+        if (foundLine != null) {
+            val name = foundLine.removePrefix("Found ").substringBefore("[").trim()
+            val id = foundLine.substringAfter("[").substringBefore("]").trim()
+            val versionLine = lines.firstOrNull { it.startsWith("Version:", ignoreCase = true) }
+            val version = versionLine?.substringAfter(":")?.trim() ?: ""
+            val publisherLine = lines.firstOrNull { it.startsWith("Publisher:", ignoreCase = true) }
+            val publisher = publisherLine?.substringAfter(":")?.trim()
+
+            if (id.isNotEmpty() && version.isNotEmpty()) {
+                return PackageDetails(id, name, sanitizeVersion(version), publisher)
+            }
+        }
+
+        // Multiple packages list table from winget show
+        val table = parseListOutput(output)
+        val first = table.firstOrNull()
+        if (first != null && first.id.isNotEmpty()) {
+            return PackageDetails(first.id, first.name, first.version, first.publisher)
+        }
+
+        return null
     }
 
     private fun findColumnStart(header: String, columnName: String): Int? {

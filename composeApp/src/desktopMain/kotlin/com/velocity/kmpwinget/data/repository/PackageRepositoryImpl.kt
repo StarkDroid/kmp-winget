@@ -89,6 +89,20 @@ class PackageRepositoryImpl : IPackageRepository {
                             val cleanName = cleanNameForQuery(pkg.name)
                             if (cleanName.length < 2) return@async pkg
 
+                            // 1. Try winget show to get exact untruncated ID and version
+                            val showResult = WinGetExecutor.execute("show", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
+                            val showDetails = WinGetParser.parseShowOutput(showResult.stdout)
+
+                            if (showDetails != null && showDetails.version.isNotEmpty()) {
+                                if (VersionComparator.isNewer(current = pkg.version, available = showDetails.version)) {
+                                    return@async pkg.copy(
+                                        availableVersion = showDetails.version,
+                                        matchedWingetId = showDetails.id
+                                    )
+                                }
+                            }
+
+                            // 2. Fallback to winget search
                             val searchResult = WinGetExecutor.execute("search", "--count", "3", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
                             val candidates = WinGetParser.parseListOutput(searchResult.stdout)
 
@@ -99,9 +113,15 @@ class PackageRepositoryImpl : IPackageRepository {
                             }
 
                             if (matched != null && VersionComparator.isNewer(current = pkg.version, available = matched.version)) {
+                                val fullId = if (matched.id.endsWith("…")) {
+                                    showDetails?.id ?: matched.id.removeSuffix("…")
+                                } else {
+                                    matched.id
+                                }
+
                                 pkg.copy(
                                     availableVersion = matched.version,
-                                    matchedWingetId = matched.id
+                                    matchedWingetId = fullId
                                 )
                             } else {
                                 pkg
