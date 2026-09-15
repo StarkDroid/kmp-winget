@@ -43,7 +43,7 @@ compose.desktop {
         mainClass = "com.velocity.kmpwinget.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Exe)
+            targetFormats(TargetFormat.Exe, TargetFormat.Msi)
             packageName = "kmpwinget"
             vendor = "Trishiraj"
             packageVersion = project.version.toString()
