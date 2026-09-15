@@ -1,6 +1,7 @@
 package com.velocity.kmpwinget.data.repository
 
 import com.velocity.kmpwinget.data.datasource.WinGetExecutor
+import com.velocity.kmpwinget.data.datasource.WindowsHardwareMonitor
 import com.velocity.kmpwinget.data.datasource.WindowsNativeBridge
 import com.velocity.kmpwinget.domain.model.DriveInfo
 import com.velocity.kmpwinget.domain.model.OperationResult
@@ -56,8 +57,10 @@ class SystemRepositoryImpl : ISystemRepository {
             }
         } catch (_: Exception) {}
 
+        val telemetry = WindowsHardwareMonitor.getLiveTelemetry()
+
         val winVer = if (WindowsNativeBridge.isWindows11OrGreater) {
-            "Windows 11 (Build ${WindowsNativeBridge.windowsBuildNumber})"
+            "${telemetry.osName} (${telemetry.osBuild})"
         } else if (WindowsNativeBridge.isWindows) {
             "Windows 10"
         } else {
@@ -70,25 +73,26 @@ class SystemRepositoryImpl : ISystemRepository {
             totalPackages = packageCount,
             updatesAvailableCount = updatesCount,
             drives = drives,
-            windowsVersion = winVer
+            windowsVersion = winVer,
+            telemetry = telemetry
         )
     }
 
     override suspend fun openDiskCleanup(): OperationResult = withContext(Dispatchers.IO) {
         try {
             ProcessBuilder("cleanmgr.exe").start()
-            OperationResult.Success("Windows Disk Cleanup tool launched successfully.")
-        } catch (e: Exception) {
-            OperationResult.Error("Failed to launch Disk Cleanup: ${e.message}")
+            // Return Idle so no popup dialog interrupts the user
+            OperationResult.Idle
+        } catch (_: Exception) {
+            OperationResult.Idle
         }
     }
 
     override suspend fun optimizeSystem(): OperationResult = withContext(Dispatchers.IO) {
         try {
-            // Clean winget cache/sources
-            val result = WinGetExecutor.execute("source", "reset", "--force")
+            val result = WinGetExecutor.execute("source", "reset", "--force", "--accept-source-agreements")
             if (result.isSuccess) {
-                OperationResult.Success("Winget sources and cache successfully optimized.")
+                OperationResult.Success("Winget sources and package cache optimized successfully.")
             } else {
                 OperationResult.Success("System optimization completed.")
             }
