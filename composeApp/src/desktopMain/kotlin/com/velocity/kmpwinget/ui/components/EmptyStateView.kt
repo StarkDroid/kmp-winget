@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.CheckCircle
 import androidx.compose.material.icons.twotone.Clear
+import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material.icons.twotone.SearchOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +32,8 @@ fun EmptyStateView(
     activeTab: NavigationTab,
     searchQuery: String,
     isDarkMode: Boolean,
-    onClearSearch: () -> Unit
+    onClearSearch: () -> Unit,
+    onRefresh: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -144,13 +146,39 @@ fun EmptyStateView(
                 Spacer(Modifier.height(6.dp))
 
                 Text(
-                    text = "Great job! There are currently no pending updates available for your installed packages.",
+                    text = "There are currently no pending updates detected for your installed packages.",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         fontSize = 13.sp
                     )
                 )
+
+                Spacer(Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .subtleIslandControl(shape = RoundedCornerShape(8.dp), isDarkMode = isDarkMode)
+                        .clickable { onRefresh() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "Scan for Updates",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
+                            )
+                        )
+                    }
+                }
             } else {
                 Text(
                     text = "No packages available",
@@ -158,6 +186,32 @@ fun EmptyStateView(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 )
+
+                Spacer(Modifier.height(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .subtleIslandControl(shape = RoundedCornerShape(8.dp), isDarkMode = isDarkMode)
+                        .clickable { onRefresh() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "Retry",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                    }
+                }
             }
         }
     }

@@ -37,6 +37,9 @@ class MainViewModel(
     private var upgradesJob: Job? = null
     private var localResolutionJob: Job? = null
 
+    // Authoritative in-memory cache of package ID to available upgrade version
+    private val knownUpgradeMap = mutableMapOf<String, String>()
+
     init {
         loadData(forceRefresh = false)
     }
@@ -146,8 +149,56 @@ class MainViewModel(
     }
 
     private fun loadData(forceRefresh: Boolean) {
+        if (forceRefresh) {
+            knownUpgradeMap.clear()
+        }
+
         _uiState.update { it.copy(isRefreshing = true) }
 
+        // 1. Launch WinGet upgrade scan
+        upgradesJob?.cancel()
+        upgradesJob = viewModelScope.launch {
+            try {
+                getPackagesUseCase.execute(
+                    showUpgradesOnly = true,
+                    forceRefresh = forceRefresh
+                ).collect { upgrades ->
+                    upgrades.forEach { upg ->
+                        if (!upg.availableVersion.isNullOrBlank()) {
+                            knownUpgradeMap[upg.id] = upg.availableVersion
+                        }
+                    }
+
+                    _uiState.update { state ->
+                        val annotatedPackages = state.allPackages.map { pkg ->
+                            if (knownUpgradeMap.containsKey(pkg.id)) {
+                                pkg.copy(availableVersion = knownUpgradeMap[pkg.id])
+                            } else {
+                                pkg
+                            }
+                        }
+
+                        val activeUpgrades = if (annotatedPackages.any { it.hasUpdate }) {
+                            annotatedPackages.filter { it.hasUpdate }
+                        } else {
+                            upgrades
+                        }
+
+                        state.copy(
+                            allPackages = annotatedPackages.ifEmpty { upgrades },
+                            upgradablePackages = activeUpgrades
+                        )
+                    }
+                    updateDisplayedPackages()
+                    refreshSystemStats()
+
+                    // Start background resolution for non-winget/local applications
+                    resolveLocalAppUpdates()
+                }
+            } catch (_: Exception) {}
+        }
+
+        // 2. Launch full installed packages scan
         packagesJob?.cancel()
         packagesJob = viewModelScope.launch {
             try {
@@ -156,8 +207,17 @@ class MainViewModel(
                     forceRefresh = forceRefresh
                 ).collect { packages ->
                     _uiState.update { state ->
+                        val annotated = packages.map { pkg ->
+                            if (knownUpgradeMap.containsKey(pkg.id)) {
+                                pkg.copy(availableVersion = knownUpgradeMap[pkg.id])
+                            } else {
+                                pkg
+                            }
+                        }
+
                         state.copy(
-                            allPackages = packages,
+                            allPackages = annotated,
+                            upgradablePackages = annotated.filter { it.hasUpdate }.ifEmpty { state.upgradablePackages },
                             isRefreshing = false
                         )
                     }
@@ -173,37 +233,6 @@ class MainViewModel(
                 }
             }
         }
-
-        upgradesJob?.cancel()
-        upgradesJob = viewModelScope.launch {
-            try {
-                getPackagesUseCase.execute(
-                    showUpgradesOnly = true,
-                    forceRefresh = forceRefresh
-                ).collect { upgrades ->
-                    _uiState.update { state ->
-                        val upgradeMap = upgrades.associate { it.id to (it.availableVersion ?: "") }
-                        val annotatedPackages = state.allPackages.map { pkg ->
-                            if (upgradeMap.containsKey(pkg.id)) {
-                                pkg.copy(availableVersion = upgradeMap[pkg.id])
-                            } else {
-                                pkg
-                            }
-                        }
-
-                        state.copy(
-                            allPackages = annotatedPackages,
-                            upgradablePackages = annotatedPackages.filter { it.hasUpdate }
-                        )
-                    }
-                    updateDisplayedPackages()
-                    refreshSystemStats()
-
-                    // Start background resolution for non-winget/local applications
-                    resolveLocalAppUpdates()
-                }
-            } catch (_: Exception) {}
-        }
     }
 
     private fun resolveLocalAppUpdates() {
@@ -215,6 +244,12 @@ class MainViewModel(
                 val resolvedMap = resolvedApps.filter { it.hasUpdate }.associateBy { it.id }
 
                 if (resolvedMap.isNotEmpty()) {
+                    resolvedMap.forEach { (id, pkg) ->
+                        if (!pkg.availableVersion.isNullOrBlank()) {
+                            knownUpgradeMap[id] = pkg.availableVersion
+                        }
+                    }
+
                     _uiState.update { state ->
                         val updatedList = state.allPackages.map { pkg ->
                             resolvedMap[pkg.id] ?: pkg
@@ -235,7 +270,7 @@ class MainViewModel(
         _uiState.update { state ->
             val sourceList = when (state.activeTab) {
                 NavigationTab.ALL_PACKAGES -> state.allPackages
-                NavigationTab.UPGRADES_AVAILABLE -> state.allPackages.filter { it.hasUpdate }
+                NavigationTab.UPGRADES_AVAILABLE -> state.allPackages.filter { it.hasUpdate }.ifEmpty { state.upgradablePackages }
                 NavigationTab.SYSTEM_TOOLS -> emptyList()
             }
 

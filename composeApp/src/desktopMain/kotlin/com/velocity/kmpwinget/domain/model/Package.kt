@@ -41,10 +41,15 @@ data class Package(
     val uniqueId: String = UUID.randomUUID().toString()
 ) {
     val hasUpdate: Boolean
-        get() = !availableVersion.isNullOrBlank() &&
-                availableVersion.trim() != version.trim() &&
-                !availableVersion.contains("Unknown", ignoreCase = true) &&
-                VersionComparator.isNewer(version, availableVersion)
+        get() {
+            if (availableVersion.isNullOrBlank()) return false
+            val avail = availableVersion.trim()
+            val cur = version.trim()
+            if (avail.isEmpty() || avail.equals(cur, ignoreCase = true)) return false
+            if (avail.contains("Unknown", ignoreCase = true)) return false
+            if (cur.isEmpty() || cur.contains("Unknown", ignoreCase = true) || cur.startsWith("<")) return true
+            return VersionComparator.isNewer(cur, avail)
+        }
 
     val cleanId: String
         get() = id.removePrefix("ARP\\Machine\\X64\\")

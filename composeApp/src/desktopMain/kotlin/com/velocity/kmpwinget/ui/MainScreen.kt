@@ -199,7 +199,8 @@ fun MainScreen() {
                                             activeTab = targetTab,
                                             searchQuery = uiState.searchQuery,
                                             isDarkMode = isDarkMode,
-                                            onClearSearch = { viewModel.onIntent(MainUiIntent.UpdateSearchQuery("")) }
+                                            onClearSearch = { viewModel.onIntent(MainUiIntent.UpdateSearchQuery("")) },
+                                            onRefresh = { viewModel.onIntent(MainUiIntent.Refresh(force = true)) }
                                         )
                                     } else {
                                         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {

@@ -32,13 +32,27 @@ class PackageRepositoryImpl : IPackageRepository {
             }
         }
 
-        // 2. Authoritative list from WinGet CLI
-        val result = WinGetExecutor.execute("list", "--disable-interactivity")
+        // 2. Authoritative list from WinGet CLI with accepted source agreements
+        val result = WinGetExecutor.execute("list", "--accept-source-agreements", "--disable-interactivity")
         val packages = WinGetParser.parseListOutput(result.stdout)
 
         if (packages.isNotEmpty()) {
-            cachedPackages = packages
-            emit(packages)
+            // Merge with known cached upgrades if available
+            val upgradeMap = cachedUpgrades.associate { it.id to (it.availableVersion ?: "") }
+            val mergedPackages = if (upgradeMap.isNotEmpty()) {
+                packages.map { pkg ->
+                    if (upgradeMap.containsKey(pkg.id)) {
+                        pkg.copy(availableVersion = upgradeMap[pkg.id])
+                    } else {
+                        pkg
+                    }
+                }
+            } else {
+                packages
+            }
+
+            cachedPackages = mergedPackages
+            emit(mergedPackages)
         } else if (cachedPackages.isNotEmpty()) {
             emit(cachedPackages)
         }
@@ -50,7 +64,7 @@ class PackageRepositoryImpl : IPackageRepository {
             return@flow
         }
 
-        val result = WinGetExecutor.execute("list", "--upgrade-available", "--disable-interactivity")
+        val result = WinGetExecutor.execute("list", "--upgrade-available", "--accept-source-agreements", "--disable-interactivity")
         val upgrades = WinGetParser.parseListOutput(result.stdout).filter { it.hasUpdate }
 
         cachedUpgrades = upgrades
@@ -62,7 +76,7 @@ class PackageRepositoryImpl : IPackageRepository {
             if (pkg.availableVersion.isNullOrBlank() && pkg.version.isNotBlank()) {
                 try {
                     val cleanName = cleanNameForQuery(pkg.name)
-                    val searchResult = WinGetExecutor.execute("search", "--count", "2", "-q", cleanName, "--disable-interactivity")
+                    val searchResult = WinGetExecutor.execute("search", "--count", "2", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
                     val candidates = WinGetParser.parseListOutput(searchResult.stdout)
 
                     val matched = candidates.firstOrNull { cand ->
@@ -396,7 +410,7 @@ class PackageRepositoryImpl : IPackageRepository {
 
     override suspend fun searchWingetStore(query: String): List<Package> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
-        val result = WinGetExecutor.execute("search", query, "--disable-interactivity")
+        val result = WinGetExecutor.execute("search", query, "--accept-source-agreements", "--disable-interactivity")
         WinGetParser.parseListOutput(result.stdout)
     }
 
