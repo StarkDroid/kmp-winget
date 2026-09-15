@@ -3,10 +3,10 @@ package com.velocity.kmpwinget.domain.model
 import java.util.UUID
 
 enum class PackageSource(val displayName: String) {
-    WINGET("winget"),
-    MSSTORE("msstore"),
-    LOCAL("local"),
-    UNKNOWN("unknown");
+    WINGET("WinGet"),
+    MSSTORE("Microsoft Store"),
+    LOCAL("Local"),
+    UNKNOWN("Unknown");
 
     companion object {
         fun fromString(str: String?): PackageSource {
@@ -38,6 +38,7 @@ data class Package(
     val estimatedSize: String? = null,
     val isPinned: Boolean = false,
     val matchedWingetId: String? = null,
+    val iconPath: String? = null,
     val uniqueId: String = UUID.randomUUID().toString()
 ) {
     val hasUpdate: Boolean

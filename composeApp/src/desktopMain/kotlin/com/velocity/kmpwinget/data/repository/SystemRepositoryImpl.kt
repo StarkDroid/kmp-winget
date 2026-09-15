@@ -2,7 +2,6 @@ package com.velocity.kmpwinget.data.repository
 
 import com.velocity.kmpwinget.data.datasource.WinGetExecutor
 import com.velocity.kmpwinget.data.datasource.WindowsHardwareMonitor
-import com.velocity.kmpwinget.data.datasource.WindowsNativeBridge
 import com.velocity.kmpwinget.domain.model.DriveInfo
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.SystemStats
@@ -59,21 +58,12 @@ class SystemRepositoryImpl : ISystemRepository {
 
         val telemetry = WindowsHardwareMonitor.getLiveTelemetry()
 
-        val winVer = if (WindowsNativeBridge.isWindows11OrGreater) {
-            "${telemetry.osName} (${telemetry.osBuild})"
-        } else if (WindowsNativeBridge.isWindows) {
-            "Windows 10"
-        } else {
-            System.getProperty("os.name", "Windows")
-        }
-
         SystemStats(
             wingetVersion = version,
             isWingetAvailable = version != "Not Detected",
             totalPackages = packageCount,
             updatesAvailableCount = updatesCount,
             drives = drives,
-            windowsVersion = winVer,
             telemetry = telemetry
         )
     }
@@ -81,7 +71,6 @@ class SystemRepositoryImpl : ISystemRepository {
     override suspend fun openDiskCleanup(): OperationResult = withContext(Dispatchers.IO) {
         try {
             ProcessBuilder("cleanmgr.exe").start()
-            // Return Idle so no popup dialog interrupts the user
             OperationResult.Idle
         } catch (_: Exception) {
             OperationResult.Idle

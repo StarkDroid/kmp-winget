@@ -17,15 +17,12 @@ object PackageDeduplicator {
                 !it.startsWith("ARP\\", ignoreCase = true) && !it.startsWith("MSIX\\", ignoreCase = true)
             }?.lowercase()
 
-            // Determine lookup key: prefer wingetId if available, otherwise normalized name
             val key = if (!wingetId.isNullOrBlank()) "id:$wingetId" else "name:$normName"
-
             val existing = deduplicatedMap[key] ?: findByNameKey(deduplicatedMap, normName)
 
             if (existing == null) {
                 deduplicatedMap[key] = pkg
             } else {
-                // Merge entries: pick the superior one (WinGet source or one with updates)
                 val superior = mergePackages(existing, pkg)
                 val existingKey = deduplicatedMap.entries.firstOrNull { it.value.id == existing.id }?.key ?: key
                 deduplicatedMap[existingKey] = superior
@@ -41,40 +38,33 @@ object PackageDeduplicator {
     }
 
     private fun mergePackages(first: Package, second: Package): Package {
-        // Priority 1: Has active update
-        if (first.hasUpdate && !second.hasUpdate) return first.copy(
-            publisher = first.publisher ?: second.publisher,
-            estimatedSize = first.estimatedSize ?: second.estimatedSize
+        val resolvedSource = when {
+            first.source == PackageSource.WINGET || second.source == PackageSource.WINGET -> PackageSource.WINGET
+            first.source == PackageSource.MSSTORE || second.source == PackageSource.MSSTORE -> PackageSource.MSSTORE
+            else -> PackageSource.LOCAL
+        }
+
+        val primary = if (!first.isLocal) first else if (!second.isLocal) second else first
+
+        val bestAvailable = when {
+            !first.availableVersion.isNullOrBlank() -> first.availableVersion
+            !second.availableVersion.isNullOrBlank() -> second.availableVersion
+            else -> null
+        }
+
+        val bestMatchedId = first.matchedWingetId ?: second.matchedWingetId
+        val bestIconPath = first.iconPath ?: second.iconPath
+        val bestPublisher = first.publisher ?: second.publisher
+        val bestSize = first.estimatedSize ?: second.estimatedSize
+
+        return primary.copy(
+            source = resolvedSource,
+            availableVersion = bestAvailable,
+            matchedWingetId = bestMatchedId,
+            iconPath = bestIconPath,
+            publisher = bestPublisher,
+            estimatedSize = bestSize
         )
-        if (second.hasUpdate && !first.hasUpdate) return second.copy(
-            publisher = second.publisher ?: first.publisher,
-            estimatedSize = second.estimatedSize ?: first.estimatedSize
-        )
-
-        // Priority 2: WinGet or MSStore managed over local ARP
-        if (!first.isLocal && second.isLocal) {
-            return first.copy(
-                availableVersion = first.availableVersion ?: second.availableVersion,
-                matchedWingetId = first.matchedWingetId ?: second.matchedWingetId,
-                publisher = first.publisher ?: second.publisher,
-                estimatedSize = first.estimatedSize ?: second.estimatedSize
-            )
-        }
-        if (!second.isLocal && first.isLocal) {
-            return second.copy(
-                availableVersion = second.availableVersion ?: first.availableVersion,
-                matchedWingetId = second.matchedWingetId ?: first.matchedWingetId,
-                publisher = second.publisher ?: first.publisher,
-                estimatedSize = second.estimatedSize ?: first.estimatedSize
-            )
-        }
-
-        // Priority 3: Newer installed version
-        if (VersionComparator.isNewer(first.version, second.version)) {
-            return second
-        }
-
-        return first
     }
 
     fun normalizeName(name: String): String {

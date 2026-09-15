@@ -1,7 +1,6 @@
 package com.velocity.kmpwinget.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,10 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -118,7 +115,7 @@ fun SystemToolsIsland(
                             primaryStat = "${telemetry.cpuUsagePercent}%",
                             secondaryStat = "${telemetry.cpuCores} Cores • ${if (telemetry.cpuSpeedGhz > 0) "${telemetry.cpuSpeedGhz} GHz" else "Active"}",
                             icon = Icons.TwoTone.Memory,
-                            progress = telemetry.cpuUsagePercent / 100f,
+                            progress = (telemetry.cpuUsagePercent / 100f).coerceIn(0.02f, 1f),
                             badgeText = telemetry.cpuTempEstimate?.let { "~${it}°C" },
                             isDarkMode = isDarkMode,
                             accentColor = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
@@ -130,10 +127,10 @@ fun SystemToolsIsland(
                         TelemetryCard(
                             title = "Memory (RAM)",
                             name = "${telemetry.ramUsedGb} GB used of ${telemetry.ramTotalGb} GB",
-                            primaryStat = "${telemetry.ramUsagePercent}%",
+                            primaryStat = "${telemetry.ramUsagePercent.toInt()}%",
                             secondaryStat = "${telemetry.ramFreeGb} GB available",
                             icon = Icons.TwoTone.Layers,
-                            progress = telemetry.ramUsagePercent / 100f,
+                            progress = (telemetry.ramUsagePercent / 100f).coerceIn(0.02f, 1f),
                             badgeText = "${telemetry.ramTotalGb.toInt()} GB Total",
                             isDarkMode = isDarkMode,
                             accentColor = Color(0xFF8B5CF6)
@@ -152,9 +149,9 @@ fun SystemToolsIsland(
                             title = "Graphics (GPU)",
                             name = telemetry.gpuName,
                             primaryStat = "${telemetry.gpuUsagePercent.toInt()}%",
-                            secondaryStat = "Active Display Controller",
+                            secondaryStat = "Display Controller",
                             icon = Icons.TwoTone.VideogameAsset,
-                            progress = (telemetry.gpuUsagePercent / 100f).coerceIn(0f, 1f),
+                            progress = (telemetry.gpuUsagePercent / 100f).coerceIn(0.02f, 1f),
                             badgeText = telemetry.gpuTempEstimate?.let { "~${it}°C" },
                             isDarkMode = isDarkMode,
                             accentColor = Color(0xFF10B981)
@@ -167,7 +164,7 @@ fun SystemToolsIsland(
                     }
                 }
 
-                // Row 3: OS Information & System Uptime
+                // Row 3: System Uptime Card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -188,7 +185,7 @@ fun SystemToolsIsland(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.TwoTone.Info,
+                                imageVector = Icons.TwoTone.AccessTime,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                                 tint = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
@@ -199,38 +196,36 @@ fun SystemToolsIsland(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = telemetry.osName,
+                                text = "System Uptime",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             )
                             Text(
-                                text = "WinGet ${stats.wingetVersion} • ${telemetry.osBuild}",
+                                text = telemetry.systemUptime.ifBlank { "Active" },
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
                         }
 
-                        if (telemetry.systemUptime.isNotBlank()) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        if (isDarkMode) AppColors.primaryContainerDark else AppColors.primaryContainerLight
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = "Uptime: ${telemetry.systemUptime}",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 11.sp,
-                                        color = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
-                                    )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (isDarkMode) AppColors.primaryContainerDark else AppColors.primaryContainerLight
                                 )
-                            }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "WinGet ${stats.wingetVersion}",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp,
+                                    color = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
+                                )
+                            )
                         }
                     }
                 }

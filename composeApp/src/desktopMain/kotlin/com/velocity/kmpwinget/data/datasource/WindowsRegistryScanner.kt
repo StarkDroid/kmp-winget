@@ -57,6 +57,10 @@ object WindowsRegistryScanner {
                             Advapi32Util.registryGetStringValue(hKey, subPath, "InstallDate").trim()
                         } else null
 
+                        val displayIcon = if (Advapi32Util.registryValueExists(hKey, subPath, "DisplayIcon")) {
+                            Advapi32Util.registryGetStringValue(hKey, subPath, "DisplayIcon").trim()
+                        } else null
+
                         val sizeKb = if (Advapi32Util.registryValueExists(hKey, subPath, "EstimatedSize")) {
                             try {
                                 val size = Advapi32Util.registryGetIntValue(hKey, subPath, "EstimatedSize")
@@ -77,6 +81,7 @@ object WindowsRegistryScanner {
                                 publisher = publisher,
                                 installDate = installDate,
                                 estimatedSize = sizeKb,
+                                iconPath = displayIcon,
                                 source = PackageSource.LOCAL
                             )
                         }

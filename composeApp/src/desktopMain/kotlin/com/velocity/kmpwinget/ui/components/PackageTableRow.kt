@@ -2,13 +2,13 @@ package com.velocity.kmpwinget.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowForward
@@ -20,18 +20,18 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.velocity.kmpwinget.data.datasource.Win32IconLoader
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.theme.AppColors
@@ -49,6 +49,13 @@ fun PackageTableRow(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
+
+    var appIcon by remember(pkg.iconPath) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(pkg.iconPath) {
+        if (!pkg.iconPath.isNullOrBlank()) {
+            appIcon = Win32IconLoader.loadIcon(pkg.iconPath)
+        }
+    }
 
     val initial = pkg.name.firstOrNull()?.uppercaseChar()?.toString() ?: "P"
     val avatarGradient = getAvatarGradient(pkg.name)
@@ -91,76 +98,85 @@ fun PackageTableRow(
                 )
             }
 
-            // Package Initial Avatar
+            // Real App Icon or Initial Avatar
             Box(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(avatarGradient),
+                    .then(
+                        if (appIcon != null) Modifier.background(Color.Transparent) else Modifier.background(avatarGradient)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = initial,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontSize = 14.sp
+                if (appIcon != null) {
+                    Image(
+                        bitmap = appIcon!!,
+                        contentDescription = pkg.name,
+                        modifier = Modifier.size(32.dp)
                     )
-                )
+                } else {
+                    Text(
+                        text = initial,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                    )
+                }
             }
 
             Spacer(Modifier.width(12.dp))
 
-            // Main Details (Name, Badges, ID, Publisher)
+            // Main Details: Title on Top, Tags on Line 2
             Column(modifier = Modifier.weight(1f)) {
+                // Line 1: Clean App Title
+                Text(
+                    text = pkg.name,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.5.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    maxLines = 1
+                )
+
+                Spacer(Modifier.height(3.dp))
+
+                // Line 2: Tags & Metadata (Source, Update Ready, ID, Publisher)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
-                        text = pkg.name,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        maxLines = 1
-                    )
-
-                    // Source Badge
+                    // Source Tag Badge
                     SourceBadge(source = pkg.source, isDarkMode = isDarkMode)
 
                     // Update Ready Indicator Pill
                     if (pkg.hasUpdate) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(4.dp))
                                 .background(
                                     if (isDarkMode) AppColors.upgradeBadgeBgDark else AppColors.upgradeBadgeBgLight
                                 )
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .padding(horizontal = 5.dp, vertical = 1.5.dp)
                         ) {
                             Text(
                                 text = "Update Ready",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp,
+                                    fontSize = 9.5.sp,
                                     color = if (isDarkMode) AppColors.upgradeAvailableDark else AppColors.upgradeAvailableLight
                                 )
                             )
                         }
                     }
-                }
 
-                Spacer(Modifier.height(2.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                    // ID
                     Text(
                         text = pkg.cleanId,
                         style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             fontFamily = FontFamily.Monospace,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
                         ),
@@ -171,13 +187,14 @@ fun PackageTableRow(
                         Text(
                             text = "•",
                             style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             )
                         )
                         Text(
                             text = pkg.publisher,
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 11.sp,
+                                fontSize = 10.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             ),
                             maxLines = 1
@@ -208,7 +225,7 @@ fun PackageTableRow(
                         Text(
                             text = pkg.version.ifEmpty { "Current" },
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 12.sp,
+                                fontSize = 11.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
@@ -233,7 +250,7 @@ fun PackageTableRow(
                     Text(
                         text = if (pkg.version.isNotEmpty()) "v${pkg.version}" else "Installed",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 12.5.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
