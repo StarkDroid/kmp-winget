@@ -194,7 +194,7 @@ fun MainScreen() {
                                         color = if (isDarkMode) AppColors.islandStrokeDark else AppColors.islandStrokeLight
                                     )
 
-                                    // Table Content
+                                    // Table Content & Loading Indicators
                                     if (targetTab == NavigationTab.UPGRADES_AVAILABLE && uiState.isCheckingUpdates) {
                                         Box(
                                             modifier = Modifier.fillMaxSize(),
@@ -211,7 +211,7 @@ fun MainScreen() {
                                                 )
                                                 Spacer(Modifier.height(16.dp))
                                                 Text(
-                                                    text = "Checking for updates...",
+                                                    text = "Checking for available updates...",
                                                     style = MaterialTheme.typography.titleMedium.copy(
                                                         fontWeight = FontWeight.Bold,
                                                         color = MaterialTheme.colorScheme.onSurface
@@ -226,7 +226,38 @@ fun MainScreen() {
                                                 )
                                             }
                                         }
-                                    } else if (uiState.displayedPackages.isEmpty() && !uiState.isRefreshing) {
+                                    } else if (uiState.displayedPackages.isEmpty() && uiState.isRefreshing) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(36.dp),
+                                                    color = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight,
+                                                    strokeWidth = 3.dp
+                                                )
+                                                Spacer(Modifier.height(16.dp))
+                                                Text(
+                                                    text = "Loading installed applications...",
+                                                    style = MaterialTheme.typography.titleMedium.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                )
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(
+                                                    text = "Discovering packages and software metadata",
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    } else if (uiState.displayedPackages.isEmpty()) {
                                         EmptyStateView(
                                             activeTab = targetTab,
                                             searchQuery = uiState.searchQuery,
