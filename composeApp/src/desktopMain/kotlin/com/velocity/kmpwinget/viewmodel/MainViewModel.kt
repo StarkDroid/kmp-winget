@@ -2,6 +2,7 @@ package com.velocity.kmpwinget.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.velocity.kmpwinget.domain.model.BackgroundQueueState
 import com.velocity.kmpwinget.domain.model.NavigationTab
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
@@ -9,6 +10,8 @@ import com.velocity.kmpwinget.domain.model.PackageDeduplicator
 import com.velocity.kmpwinget.domain.model.PackageSortOption
 import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.domain.model.SourceFilterOption
+import com.velocity.kmpwinget.domain.model.TaskStatus
+import com.velocity.kmpwinget.domain.model.UpdateTask
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import com.velocity.kmpwinget.domain.usecase.BatchOperationUseCase
 import com.velocity.kmpwinget.domain.usecase.GetPackagesUseCase
@@ -37,6 +40,7 @@ class MainViewModel(
     private var packagesJob: Job? = null
     private var upgradesJob: Job? = null
     private var localResolutionJob: Job? = null
+    private var queueWorkerJob: Job? = null
 
     // Authoritative in-memory cache of package ID to available upgrade version
     private val knownUpgradeMap = mutableMapOf<String, String>()
@@ -113,7 +117,12 @@ class MainViewModel(
                 _uiState.update { it.copy(packageToConfirmUninstall = null) }
             }
             is MainUiIntent.RequestBatchUpgrade -> {
-                upgradeBatch()
+                val selectedIds = _uiState.value.selectedPackageIds
+                val packagesToUpgrade = _uiState.value.allPackages.filter { selectedIds.contains(it.id) }
+                if (packagesToUpgrade.isNotEmpty()) {
+                    _uiState.update { it.copy(selectedPackageIds = emptySet(), isMultiSelectMode = false) }
+                    enqueueBackgroundUpdates(packagesToUpgrade)
+                }
             }
             is MainUiIntent.RequestBatchUninstall -> {
                 _uiState.update { it.copy(batchUninstallConfirm = true) }
@@ -147,6 +156,112 @@ class MainViewModel(
                     val result = systemToolsUseCase.optimizeSystem()
                     _uiState.update { it.copy(operationResult = result) }
                     loadData(forceRefresh = true)
+                }
+            }
+            is MainUiIntent.EnqueueBackgroundUpdates -> {
+                enqueueBackgroundUpdates(intent.packages)
+            }
+            is MainUiIntent.ToggleQueueExpanded -> {
+                _uiState.update {
+                    it.copy(
+                        backgroundQueue = it.backgroundQueue.copy(isExpanded = !it.backgroundQueue.isExpanded)
+                    )
+                }
+            }
+            is MainUiIntent.DismissQueue -> {
+                _uiState.update {
+                    it.copy(backgroundQueue = BackgroundQueueState())
+                }
+            }
+        }
+    }
+
+    private fun enqueueBackgroundUpdates(packages: List<Package>) {
+        val newTasks = packages.map { UpdateTask(pkg = it) }
+        _uiState.update { state ->
+            val combinedTasks = state.backgroundQueue.tasks + newTasks
+            state.copy(
+                backgroundQueue = state.backgroundQueue.copy(
+                    tasks = combinedTasks,
+                    isRunning = true
+                )
+            )
+        }
+        processBackgroundQueue()
+    }
+
+    private fun processBackgroundQueue() {
+        if (queueWorkerJob?.isActive == true) return
+
+        queueWorkerJob = viewModelScope.launch {
+            while (true) {
+                val nextTask = _uiState.value.backgroundQueue.tasks.firstOrNull { it.status == TaskStatus.QUEUED }
+                if (nextTask == null) {
+                    _uiState.update {
+                        it.copy(
+                            backgroundQueue = it.backgroundQueue.copy(isRunning = false)
+                        )
+                    }
+                    loadData(forceRefresh = true)
+                    break
+                }
+
+                // Update task to IN_PROGRESS
+                _uiState.update { state ->
+                    val updated = state.backgroundQueue.tasks.map {
+                        if (it.pkg.uniqueId == nextTask.pkg.uniqueId) {
+                            it.copy(status = TaskStatus.IN_PROGRESS, message = "Downloading & Installing...")
+                        } else it
+                    }
+                    state.copy(backgroundQueue = state.backgroundQueue.copy(tasks = updated, isRunning = true))
+                }
+
+                var isTaskSuccess = false
+                val logsBuilder = StringBuilder()
+
+                try {
+                    packageRepository.upgradePackage(nextTask.pkg.id, nextTask.pkg.name, nextTask.pkg.matchedWingetId).collect { result ->
+                        when (result) {
+                            is OperationResult.Loading -> {
+                                logsBuilder.append(result.logOutput)
+                                _uiState.update { state ->
+                                    val updated = state.backgroundQueue.tasks.map {
+                                        if (it.pkg.uniqueId == nextTask.pkg.uniqueId) {
+                                            it.copy(
+                                                progress = result.currentProgress ?: 0.5f,
+                                                message = result.message,
+                                                logs = logsBuilder.toString()
+                                            )
+                                        } else it
+                                    }
+                                    state.copy(backgroundQueue = state.backgroundQueue.copy(tasks = updated))
+                                }
+                            }
+                            is OperationResult.Success -> {
+                                isTaskSuccess = true
+                            }
+                            is OperationResult.Error -> {
+                                isTaskSuccess = false
+                            }
+                            else -> {}
+                        }
+                    }
+                } catch (_: Exception) {
+                    isTaskSuccess = false
+                }
+
+                // Mark task as COMPLETED or FAILED
+                _uiState.update { state ->
+                    val updated = state.backgroundQueue.tasks.map {
+                        if (it.pkg.uniqueId == nextTask.pkg.uniqueId) {
+                            it.copy(
+                                status = if (isTaskSuccess) TaskStatus.COMPLETED else TaskStatus.FAILED,
+                                message = if (isTaskSuccess) "Updated successfully" else "Failed to update",
+                                progress = 1f
+                            )
+                        } else it
+                    }
+                    state.copy(backgroundQueue = state.backgroundQueue.copy(tasks = updated))
                 }
             }
         }
@@ -349,22 +464,6 @@ class MainViewModel(
             uninstallPackageUseCase.execute(pkg.id, pkg.name).collect { result ->
                 _uiState.update { it.copy(operationResult = result) }
                 if (result is OperationResult.Success) {
-                    loadData(forceRefresh = true)
-                }
-            }
-        }
-    }
-
-    private fun upgradeBatch() {
-        val selectedIds = _uiState.value.selectedPackageIds
-        val packagesToUpgrade = _uiState.value.allPackages.filter { selectedIds.contains(it.id) }
-        if (packagesToUpgrade.isEmpty()) return
-
-        viewModelScope.launch {
-            batchOperationUseCase.upgradeMultiple(packagesToUpgrade).collect { result ->
-                _uiState.update { it.copy(operationResult = result) }
-                if (result is OperationResult.Success) {
-                    _uiState.update { it.copy(selectedPackageIds = emptySet(), isMultiSelectMode = false) }
                     loadData(forceRefresh = true)
                 }
             }

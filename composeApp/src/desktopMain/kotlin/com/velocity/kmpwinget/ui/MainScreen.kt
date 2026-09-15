@@ -45,7 +45,7 @@ fun MainScreen() {
     val listState = rememberLazyListState()
 
     AppTheme(isDarkTheme = isDarkMode) {
-        // Operation Progress & Live Logs Modal Dialog
+        // Operation Progress & Live Logs Modal Dialog (Used for single foreground actions)
         if (uiState.operationResult !is OperationResult.Idle) {
             OperationDialog(
                 result = uiState.operationResult,
@@ -273,6 +273,20 @@ fun MainScreen() {
                         }
                     }
                 }
+            }
+
+            // Floating Background Queue Task Island (Non-blocking background updater)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 24.dp, bottom = 24.dp)
+            ) {
+                BackgroundQueueIsland(
+                    queueState = uiState.backgroundQueue,
+                    isDarkMode = isDarkMode,
+                    onToggleExpand = { viewModel.onIntent(MainUiIntent.ToggleQueueExpanded) },
+                    onDismiss = { viewModel.onIntent(MainUiIntent.DismissQueue) }
+                )
             }
         }
     }

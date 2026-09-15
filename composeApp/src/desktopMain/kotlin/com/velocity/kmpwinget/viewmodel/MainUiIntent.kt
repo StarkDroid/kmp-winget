@@ -26,4 +26,7 @@ sealed interface MainUiIntent {
     data object ClearOperationResult : MainUiIntent
     data object LaunchDiskCleanup : MainUiIntent
     data object OptimizeSystem : MainUiIntent
+    data class EnqueueBackgroundUpdates(val packages: List<Package>) : MainUiIntent
+    data object ToggleQueueExpanded : MainUiIntent
+    data object DismissQueue : MainUiIntent
 }

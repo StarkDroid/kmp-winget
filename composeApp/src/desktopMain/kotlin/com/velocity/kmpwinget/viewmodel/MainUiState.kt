@@ -1,5 +1,6 @@
 package com.velocity.kmpwinget.viewmodel
 
+import com.velocity.kmpwinget.domain.model.BackgroundQueueState
 import com.velocity.kmpwinget.domain.model.NavigationTab
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
@@ -19,6 +20,7 @@ data class MainUiState(
     val sourceFilter: SourceFilterOption = SourceFilterOption.ALL,
     val isRefreshing: Boolean = false,
     val operationResult: OperationResult = OperationResult.Idle,
+    val backgroundQueue: BackgroundQueueState = BackgroundQueueState(),
     val systemStats: SystemStats = SystemStats(),
     val packageToConfirmUninstall: Package? = null,
     val batchUninstallConfirm: Boolean = false
