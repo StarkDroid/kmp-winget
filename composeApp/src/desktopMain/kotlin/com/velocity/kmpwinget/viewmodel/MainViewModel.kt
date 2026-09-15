@@ -19,12 +19,9 @@ import com.velocity.kmpwinget.domain.usecase.SystemToolsUseCase
 import com.velocity.kmpwinget.domain.usecase.UninstallPackageUseCase
 import com.velocity.kmpwinget.domain.usecase.UpgradePackageUseCase
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -40,13 +37,17 @@ class MainViewModel(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    private var scanJob: Job? = null
+    private var packagesJob: Job? = null
+    private var upgradesJob: Job? = null
+    private var localResolutionJob: Job? = null
     private var queueWorkerJob: Job? = null
 
     // Authoritative in-memory cache of package ID to available upgrade version
     private val knownUpgradeMap = mutableMapOf<String, String>()
 
     init {
+        // Fetch system version and stats immediately
+        refreshSystemStats()
         loadData(forceRefresh = false)
     }
 
@@ -186,84 +187,129 @@ class MainViewModel(
             )
         }
 
-        scanJob?.cancel()
-        scanJob = viewModelScope.launch {
+        // 1. Reactive flow for full installed package list (WinGet + MSStore + Local)
+        packagesJob?.cancel()
+        packagesJob = viewModelScope.launch {
             try {
-                coroutineScope {
-                    // 1. Fetch raw installed packages flow
-                    val installedDeferred = async {
-                        getPackagesUseCase.execute(
-                            showUpgradesOnly = false,
-                            forceRefresh = forceRefresh
-                        ).firstOrNull() ?: emptyList()
-                    }
-
-                    // 2. Fetch authoritative WinGet upgrades
-                    val wingetUpgradesDeferred = async {
-                        getPackagesUseCase.execute(
-                            showUpgradesOnly = true,
-                            forceRefresh = forceRefresh
-                        ).firstOrNull() ?: emptyList()
-                    }
-
-                    val rawInstalled = installedDeferred.await()
-                    val wingetUpgrades = wingetUpgradesDeferred.await()
-
-                    // Populate initial upgrade map from WinGet
-                    wingetUpgrades.forEach { upg ->
-                        if (!upg.availableVersion.isNullOrBlank()) {
-                            knownUpgradeMap[upg.id] = upg.availableVersion
-                        }
-                    }
-
-                    // 3. Resolve local/non-winget applications in background concurrently
-                    val localApps = rawInstalled.filter { it.isLocal && !knownUpgradeMap.containsKey(it.id) }
-                    val resolvedLocalApps = if (localApps.isNotEmpty()) {
-                        packageRepository.resolveUpdatesForLocalPackages(localApps)
-                    } else emptyList()
-
-                    resolvedLocalApps.filter { it.hasUpdate }.forEach { pkg ->
-                        if (!pkg.availableVersion.isNullOrBlank()) {
-                            knownUpgradeMap[pkg.id] = pkg.availableVersion
-                        }
-                    }
-
-                    // 4. Merge all packages and upgrades into a single authoritative set
-                    val annotatedAll = rawInstalled.map { pkg ->
-                        val updateVer = knownUpgradeMap[pkg.id]
-                        if (!updateVer.isNullOrBlank()) {
-                            val matchedId = resolvedLocalApps.firstOrNull { it.id == pkg.id }?.matchedWingetId ?: pkg.matchedWingetId
-                            pkg.copy(availableVersion = updateVer, matchedWingetId = matchedId)
-                        } else {
-                            pkg
-                        }
-                    }
-
-                    val deduplicatedAll = PackageDeduplicator.deduplicate(annotatedAll)
-                    val deduplicatedUpgrades = PackageDeduplicator.deduplicate(
-                        deduplicatedAll.filter { it.hasUpdate }.ifEmpty { wingetUpgrades }
-                    )
-
-                    // 5. Atomically update UI state only after all updates are 100% loaded
+                getPackagesUseCase.execute(
+                    showUpgradesOnly = false,
+                    forceRefresh = forceRefresh
+                ).collect { packages ->
                     _uiState.update { state ->
+                        val annotated = packages.map { pkg ->
+                            val knownUp = knownUpgradeMap[pkg.id] ?: knownUpgradeMap[pkg.matchedWingetId]
+                            if (!knownUp.isNullOrBlank()) {
+                                pkg.copy(availableVersion = knownUp)
+                            } else {
+                                pkg
+                            }
+                        }
+
+                        val deduplicatedAll = PackageDeduplicator.deduplicate(annotated)
+                        val activeUpgrades = PackageDeduplicator.deduplicate(
+                            deduplicatedAll.filter { it.hasUpdate }.ifEmpty { state.upgradablePackages }
+                        )
+
                         state.copy(
                             allPackages = deduplicatedAll,
-                            upgradablePackages = deduplicatedUpgrades,
-                            isRefreshing = false,
-                            isCheckingUpdates = false
+                            upgradablePackages = activeUpgrades,
+                            isRefreshing = false
                         )
                     }
-
                     updateDisplayedPackages()
                     refreshSystemStats()
+
+                    // Start background resolution for non-winget/local applications
+                    resolveLocalAppUpdates()
                 }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isRefreshing = false,
-                        isCheckingUpdates = false,
                         operationResult = OperationResult.Error("Failed to load packages: ${e.message}")
                     )
+                }
+            }
+        }
+
+        // 2. Reactive flow for authoritative WinGet upgrades
+        upgradesJob?.cancel()
+        upgradesJob = viewModelScope.launch {
+            try {
+                getPackagesUseCase.execute(
+                    showUpgradesOnly = true,
+                    forceRefresh = forceRefresh
+                ).collect { upgrades ->
+                    upgrades.forEach { upg ->
+                        if (!upg.availableVersion.isNullOrBlank()) {
+                            knownUpgradeMap[upg.id] = upg.availableVersion
+                        }
+                    }
+
+                    _uiState.update { state ->
+                        val annotatedPackages = state.allPackages.map { pkg ->
+                            val upVer = knownUpgradeMap[pkg.id] ?: knownUpgradeMap[pkg.matchedWingetId]
+                            if (!upVer.isNullOrBlank()) {
+                                pkg.copy(availableVersion = upVer)
+                            } else {
+                                pkg
+                            }
+                        }
+
+                        val deduplicatedAll = PackageDeduplicator.deduplicate(annotatedPackages.ifEmpty { upgrades })
+                        val activeUpgrades = PackageDeduplicator.deduplicate(
+                            if (deduplicatedAll.any { it.hasUpdate }) {
+                                deduplicatedAll.filter { it.hasUpdate }
+                            } else {
+                                upgrades
+                            }
+                        )
+
+                        state.copy(
+                            allPackages = deduplicatedAll,
+                            upgradablePackages = activeUpgrades,
+                            isCheckingUpdates = false
+                        )
+                    }
+                    updateDisplayedPackages()
+                    refreshSystemStats()
+                }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(isCheckingUpdates = false) }
+            }
+        }
+    }
+
+    private fun resolveLocalAppUpdates() {
+        localResolutionJob?.cancel()
+        localResolutionJob = viewModelScope.launch {
+            val localApps = _uiState.value.allPackages.filter { it.isLocal && !it.hasUpdate }
+            if (localApps.isNotEmpty()) {
+                val resolvedApps = packageRepository.resolveUpdatesForLocalPackages(localApps)
+                val resolvedMap = resolvedApps.filter { it.hasUpdate }.associateBy { it.id }
+
+                if (resolvedMap.isNotEmpty()) {
+                    resolvedMap.forEach { (id, pkg) ->
+                        if (!pkg.availableVersion.isNullOrBlank()) {
+                            knownUpgradeMap[id] = pkg.availableVersion
+                            if (!pkg.matchedWingetId.isNullOrBlank()) {
+                                knownUpgradeMap[pkg.matchedWingetId] = pkg.availableVersion
+                            }
+                        }
+                    }
+
+                    _uiState.update { state ->
+                        val updatedList = state.allPackages.map { pkg ->
+                            resolvedMap[pkg.id] ?: pkg
+                        }
+                        val deduplicatedAll = PackageDeduplicator.deduplicate(updatedList)
+                        state.copy(
+                            allPackages = deduplicatedAll,
+                            upgradablePackages = deduplicatedAll.filter { it.hasUpdate }
+                        )
+                    }
+                    updateDisplayedPackages()
+                    refreshSystemStats()
                 }
             }
         }
@@ -311,6 +357,37 @@ class MainViewModel(
             }
 
             state.copy(displayedPackages = PackageDeduplicator.deduplicate(sorted))
+        }
+    }
+
+    private fun refreshSystemStats() {
+        viewModelScope.launch {
+            val count = _uiState.value.totalInstalledCount
+            val updates = _uiState.value.updatesCount
+            val stats = systemToolsUseCase.getSystemStats(count, updates)
+            _uiState.update { it.copy(systemStats = stats) }
+        }
+    }
+
+    private fun upgradeSingle(pkg: Package) {
+        viewModelScope.launch {
+            upgradePackageUseCase.execute(pkg).collect { result ->
+                _uiState.update { it.copy(operationResult = result) }
+                if (result is OperationResult.Success) {
+                    loadData(forceRefresh = true)
+                }
+            }
+        }
+    }
+
+    private fun uninstallSingle(pkg: Package) {
+        viewModelScope.launch {
+            uninstallPackageUseCase.execute(pkg.id, pkg.name).collect { result ->
+                _uiState.update { it.copy(operationResult = result) }
+                if (result is OperationResult.Success) {
+                    loadData(forceRefresh = true)
+                }
+            }
         }
     }
 
@@ -400,37 +477,6 @@ class MainViewModel(
                         } else it
                     }
                     state.copy(backgroundQueue = state.backgroundQueue.copy(tasks = updated))
-                }
-            }
-        }
-    }
-
-    private fun refreshSystemStats() {
-        viewModelScope.launch {
-            val count = _uiState.value.totalInstalledCount
-            val updates = _uiState.value.updatesCount
-            val stats = systemToolsUseCase.getSystemStats(count, updates)
-            _uiState.update { it.copy(systemStats = stats) }
-        }
-    }
-
-    private fun upgradeSingle(pkg: Package) {
-        viewModelScope.launch {
-            upgradePackageUseCase.execute(pkg).collect { result ->
-                _uiState.update { it.copy(operationResult = result) }
-                if (result is OperationResult.Success) {
-                    loadData(forceRefresh = true)
-                }
-            }
-        }
-    }
-
-    private fun uninstallSingle(pkg: Package) {
-        viewModelScope.launch {
-            uninstallPackageUseCase.execute(pkg.id, pkg.name).collect { result ->
-                _uiState.update { it.copy(operationResult = result) }
-                if (result is OperationResult.Success) {
-                    loadData(forceRefresh = true)
                 }
             }
         }
