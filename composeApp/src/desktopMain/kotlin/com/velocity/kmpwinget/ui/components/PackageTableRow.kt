@@ -143,11 +143,30 @@ fun PackageTableRow(
 
                 Spacer(Modifier.height(3.dp))
 
-                // Line 2: Tags & Metadata (Source, Update Ready, ID, Publisher)
+                // Line 2: Publisher Name & Tags
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    val publisherName = when {
+                        !pkg.publisher.isNullOrBlank() -> pkg.publisher
+                        pkg.source == PackageSource.MSSTORE -> "Microsoft Store"
+                        pkg.id.contains(".") -> pkg.id.substringBefore(".")
+                        else -> null
+                    }
+
+                    if (!publisherName.isNullOrBlank()) {
+                        Text(
+                            text = publisherName,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            maxLines = 1
+                        )
+                    }
+
                     // Source Tag Badge
                     SourceBadge(source = pkg.source, isDarkMode = isDarkMode)
 
@@ -170,35 +189,6 @@ fun PackageTableRow(
                                 )
                             )
                         }
-                    }
-
-                    // ID
-                    Text(
-                        text = pkg.cleanId,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 10.5.sp,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
-                        ),
-                        maxLines = 1
-                    )
-
-                    if (!pkg.publisher.isNullOrBlank()) {
-                        Text(
-                            text = "•",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 10.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            )
-                        )
-                        Text(
-                            text = pkg.publisher,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 10.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            maxLines = 1
-                        )
                     }
 
                     if (!pkg.estimatedSize.isNullOrBlank()) {
