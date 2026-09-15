@@ -5,6 +5,7 @@ import com.velocity.kmpwinget.data.datasource.WinGetParser
 import com.velocity.kmpwinget.data.datasource.WindowsRegistryScanner
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
+import com.velocity.kmpwinget.domain.model.PackageDeduplicator
 import com.velocity.kmpwinget.domain.model.VersionComparator
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import kotlinx.coroutines.Dispatchers
@@ -31,31 +32,27 @@ class PackageRepositoryImpl : IPackageRepository {
         if (cachedPackages.isEmpty()) {
             val fastRegistryApps = WindowsRegistryScanner.scanInstalledApps()
             if (fastRegistryApps.isNotEmpty()) {
-                emit(fastRegistryApps)
+                emit(PackageDeduplicator.deduplicate(fastRegistryApps))
             }
         }
 
-        // 2. Authoritative list from WinGet CLI with accepted source agreements
+        // 2. Real-time authoritative list from WinGet CLI
         val result = WinGetExecutor.execute("list", "--accept-source-agreements", "--disable-interactivity")
         val packages = WinGetParser.parseListOutput(result.stdout)
 
         if (packages.isNotEmpty()) {
-            // Merge with known cached upgrades if available
             val upgradeMap = cachedUpgrades.associate { it.id to (it.availableVersion ?: "") }
-            val mergedPackages = if (upgradeMap.isNotEmpty()) {
-                packages.map { pkg ->
-                    if (upgradeMap.containsKey(pkg.id)) {
-                        pkg.copy(availableVersion = upgradeMap[pkg.id])
-                    } else {
-                        pkg
-                    }
+            val mergedPackages = packages.map { pkg ->
+                if (upgradeMap.containsKey(pkg.id)) {
+                    pkg.copy(availableVersion = upgradeMap[pkg.id])
+                } else {
+                    pkg
                 }
-            } else {
-                packages
             }
 
-            cachedPackages = mergedPackages
-            emit(mergedPackages)
+            val deduplicated = PackageDeduplicator.deduplicate(mergedPackages)
+            cachedPackages = deduplicated
+            emit(deduplicated)
         } else if (cachedPackages.isNotEmpty()) {
             emit(cachedPackages)
         }
@@ -69,9 +66,10 @@ class PackageRepositoryImpl : IPackageRepository {
 
         val result = WinGetExecutor.execute("list", "--upgrade-available", "--accept-source-agreements", "--disable-interactivity")
         val upgrades = WinGetParser.parseListOutput(result.stdout).filter { it.hasUpdate }
+        val deduplicated = PackageDeduplicator.deduplicate(upgrades)
 
-        cachedUpgrades = upgrades
-        emit(upgrades)
+        cachedUpgrades = deduplicated
+        emit(deduplicated)
     }.flowOn(Dispatchers.IO)
 
     override suspend fun resolveUpdatesForLocalPackages(packages: List<Package>): List<Package> = withContext(Dispatchers.IO) {
@@ -137,7 +135,7 @@ class PackageRepositoryImpl : IPackageRepository {
             }
         }
 
-        packages.map { resolvedMap[it.id] ?: it }
+        PackageDeduplicator.deduplicate(packages.map { resolvedMap[it.id] ?: it })
     }
 
     override suspend fun upgradePackage(
@@ -449,7 +447,7 @@ class PackageRepositoryImpl : IPackageRepository {
     override suspend fun searchWingetStore(query: String): List<Package> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
         val result = WinGetExecutor.execute("search", query, "--accept-source-agreements", "--disable-interactivity")
-        WinGetParser.parseListOutput(result.stdout)
+        PackageDeduplicator.deduplicate(WinGetParser.parseListOutput(result.stdout))
     }
 
     private fun cleanNameForQuery(name: String): String {

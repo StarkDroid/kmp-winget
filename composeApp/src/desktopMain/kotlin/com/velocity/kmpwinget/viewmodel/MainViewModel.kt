@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.velocity.kmpwinget.domain.model.NavigationTab
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
+import com.velocity.kmpwinget.domain.model.PackageDeduplicator
 import com.velocity.kmpwinget.domain.model.PackageSortOption
 import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.domain.model.SourceFilterOption
@@ -178,14 +179,17 @@ class MainViewModel(
                             }
                         }
 
-                        val activeUpgrades = if (annotatedPackages.any { it.hasUpdate }) {
-                            annotatedPackages.filter { it.hasUpdate }
-                        } else {
-                            upgrades
-                        }
+                        val deduplicatedAll = PackageDeduplicator.deduplicate(annotatedPackages.ifEmpty { upgrades })
+                        val activeUpgrades = PackageDeduplicator.deduplicate(
+                            if (deduplicatedAll.any { it.hasUpdate }) {
+                                deduplicatedAll.filter { it.hasUpdate }
+                            } else {
+                                upgrades
+                            }
+                        )
 
                         state.copy(
-                            allPackages = annotatedPackages.ifEmpty { upgrades },
+                            allPackages = deduplicatedAll,
                             upgradablePackages = activeUpgrades
                         )
                     }
@@ -215,9 +219,14 @@ class MainViewModel(
                             }
                         }
 
+                        val deduplicatedAll = PackageDeduplicator.deduplicate(annotated)
+                        val activeUpgrades = PackageDeduplicator.deduplicate(
+                            deduplicatedAll.filter { it.hasUpdate }.ifEmpty { state.upgradablePackages }
+                        )
+
                         state.copy(
-                            allPackages = annotated,
-                            upgradablePackages = annotated.filter { it.hasUpdate }.ifEmpty { state.upgradablePackages },
+                            allPackages = deduplicatedAll,
+                            upgradablePackages = activeUpgrades,
                             isRefreshing = false
                         )
                     }
@@ -254,9 +263,10 @@ class MainViewModel(
                         val updatedList = state.allPackages.map { pkg ->
                             resolvedMap[pkg.id] ?: pkg
                         }
+                        val deduplicatedAll = PackageDeduplicator.deduplicate(updatedList)
                         state.copy(
-                            allPackages = updatedList,
-                            upgradablePackages = updatedList.filter { it.hasUpdate }
+                            allPackages = deduplicatedAll,
+                            upgradablePackages = deduplicatedAll.filter { it.hasUpdate }
                         )
                     }
                     updateDisplayedPackages()
@@ -307,7 +317,7 @@ class MainViewModel(
                 )
             }
 
-            state.copy(displayedPackages = sorted)
+            state.copy(displayedPackages = PackageDeduplicator.deduplicate(sorted))
         }
     }
 

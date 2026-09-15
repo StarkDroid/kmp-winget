@@ -1,6 +1,7 @@
 package com.velocity.kmpwinget.domain.usecase
 
 import com.velocity.kmpwinget.domain.model.Package
+import com.velocity.kmpwinget.domain.model.PackageDeduplicator
 import com.velocity.kmpwinget.domain.model.PackageSortOption
 import com.velocity.kmpwinget.domain.model.SourceFilterOption
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
@@ -24,7 +25,8 @@ class GetPackagesUseCase(
         }
 
         return baseFlow.map { packages ->
-            filterAndSort(packages, searchQuery, sortOption, sourceFilter, showUpgradesOnly)
+            val deduplicated = PackageDeduplicator.deduplicate(packages)
+            filterAndSort(deduplicated, searchQuery, sortOption, sourceFilter, showUpgradesOnly)
         }
     }
 
