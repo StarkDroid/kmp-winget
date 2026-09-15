@@ -8,6 +8,9 @@ import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.VersionComparator
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -72,34 +75,49 @@ class PackageRepositoryImpl : IPackageRepository {
     }.flowOn(Dispatchers.IO)
 
     override suspend fun resolveUpdatesForLocalPackages(packages: List<Package>): List<Package> = withContext(Dispatchers.IO) {
-        val resolved = packages.map { pkg ->
-            if (pkg.availableVersion.isNullOrBlank() && pkg.version.isNotBlank()) {
-                try {
-                    val cleanName = cleanNameForQuery(pkg.name)
-                    val searchResult = WinGetExecutor.execute("search", "--count", "2", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
-                    val candidates = WinGetParser.parseListOutput(searchResult.stdout)
+        val eligible = packages.filter { it.availableVersion.isNullOrBlank() && it.version.isNotBlank() && !it.version.contains("Unknown", ignoreCase = true) }
+        if (eligible.isEmpty()) return@withContext packages
 
-                    val matched = candidates.firstOrNull { cand ->
-                        cand.name.contains(cleanName, ignoreCase = true) ||
-                                cleanName.contains(cand.name, ignoreCase = true)
-                    }
+        val resolvedMap = mutableMapOf<String, Package>()
 
-                    if (matched != null && VersionComparator.isNewer(current = pkg.version, available = matched.version)) {
-                        pkg.copy(
-                            availableVersion = matched.version,
-                            matchedWingetId = matched.id
-                        )
-                    } else {
-                        pkg
+        // Process in chunks of 4 concurrent coroutines for fast background resolution
+        eligible.chunked(4).forEach { chunk ->
+            coroutineScope {
+                val deferreds = chunk.map { pkg ->
+                    async {
+                        try {
+                            val cleanName = cleanNameForQuery(pkg.name)
+                            if (cleanName.length < 2) return@async pkg
+
+                            val searchResult = WinGetExecutor.execute("search", "--count", "3", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
+                            val candidates = WinGetParser.parseListOutput(searchResult.stdout)
+
+                            val matched = candidates.firstOrNull { cand ->
+                                cand.name.equals(cleanName, ignoreCase = true) ||
+                                        cand.name.contains(cleanName, ignoreCase = true) ||
+                                        cleanName.contains(cand.name, ignoreCase = true)
+                            }
+
+                            if (matched != null && VersionComparator.isNewer(current = pkg.version, available = matched.version)) {
+                                pkg.copy(
+                                    availableVersion = matched.version,
+                                    matchedWingetId = matched.id
+                                )
+                            } else {
+                                pkg
+                            }
+                        } catch (_: Throwable) {
+                            pkg
+                        }
                     }
-                } catch (_: Throwable) {
-                    pkg
                 }
-            } else {
-                pkg
+                deferreds.awaitAll().forEach { resolvedPkg ->
+                    resolvedMap[resolvedPkg.id] = resolvedPkg
+                }
             }
         }
-        resolved
+
+        packages.map { resolvedMap[it.id] ?: it }
     }
 
     override suspend fun upgradePackage(

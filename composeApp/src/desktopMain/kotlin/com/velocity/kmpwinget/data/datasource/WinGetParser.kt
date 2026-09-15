@@ -5,8 +5,10 @@ import com.velocity.kmpwinget.domain.model.PackageSource
 
 object WinGetParser {
 
+    private data class ColumnPos(val name: String, val start: Int)
+
     /**
-     * Parses the output of `winget list` or `winget search`.
+     * Parses the output of `winget list` or `winget search` using dynamic column boundaries.
      */
     fun parseListOutput(output: String): List<Package> {
         if (output.isBlank()) return emptyList()
@@ -25,12 +27,19 @@ object WinGetParser {
         val headerLine = lines[headerIndex]
         val separatorIndex = headerIndex + 1
 
-        val idStart = headerLine.indexOf("Id", ignoreCase = true).takeIf { it >= 0 }
-            ?: headerLine.indexOf("ID").takeIf { it >= 0 } ?: 30
-        val versionStart = headerLine.indexOf("Version", ignoreCase = true).takeIf { it >= 0 } ?: (idStart + 25)
-        val availableStart = headerLine.indexOf("Available", ignoreCase = true)
-        val sourceStart = headerLine.indexOf("Source", ignoreCase = true)
+        // Detect all column starts dynamically
+        val columns = mutableListOf<ColumnPos>()
+        columns.add(ColumnPos("Name", 0))
 
+        findColumnStart(headerLine, "Id")?.let { columns.add(ColumnPos("Id", it)) }
+            ?: findColumnStart(headerLine, "ID")?.let { columns.add(ColumnPos("Id", it)) }
+
+        findColumnStart(headerLine, "Version")?.let { columns.add(ColumnPos("Version", it)) }
+        findColumnStart(headerLine, "Available")?.let { columns.add(ColumnPos("Available", it)) }
+        findColumnStart(headerLine, "Match")?.let { columns.add(ColumnPos("Match", it)) }
+        findColumnStart(headerLine, "Source")?.let { columns.add(ColumnPos("Source", it)) }
+
+        val sortedColumns = columns.sortedBy { it.start }
         val packages = mutableListOf<Package>()
 
         for (i in (separatorIndex + 1) until lines.size) {
@@ -41,30 +50,25 @@ object WinGetParser {
 
             try {
                 val len = line.length
-                val name = if (len > 0) line.substring(0, minOf(len, idStart)).trim() else ""
-                val id = if (len > idStart) line.substring(idStart, minOf(len, versionStart)).trim() else ""
-
-                val rawVersion = when {
-                    availableStart > 0 && len > versionStart ->
-                        line.substring(versionStart, minOf(len, availableStart)).trim()
-                    sourceStart > 0 && len > versionStart ->
-                        line.substring(versionStart, minOf(len, sourceStart)).trim()
-                    len > versionStart ->
-                        line.substring(versionStart).trim()
-                    else -> ""
+                fun getColValue(colName: String): String? {
+                    val idx = sortedColumns.indexOfFirst { it.name.equals(colName, ignoreCase = true) }
+                    if (idx == -1) return null
+                    val start = sortedColumns[idx].start
+                    if (start >= len) return null
+                    val end = if (idx + 1 < sortedColumns.size) {
+                        minOf(len, sortedColumns[idx + 1].start)
+                    } else {
+                        len
+                    }
+                    if (start >= end) return null
+                    return line.substring(start, end).trim()
                 }
 
-                val rawAvailable = if (availableStart > 0 && len > availableStart) {
-                    if (sourceStart > 0 && len > sourceStart) {
-                        line.substring(availableStart, minOf(len, sourceStart)).trim()
-                    } else {
-                        line.substring(availableStart).trim()
-                    }
-                } else null
-
-                val rawSource = if (sourceStart > 0 && len > sourceStart) {
-                    line.substring(sourceStart).trim()
-                } else null
+                val name = getColValue("Name") ?: ""
+                val id = getColValue("Id") ?: ""
+                val rawVersion = getColValue("Version") ?: ""
+                val rawAvailable = getColValue("Available")
+                val rawSource = getColValue("Source")
 
                 if (name.isNotEmpty() && id.isNotEmpty()) {
                     val cleanedVersion = sanitizeVersion(rawVersion)
@@ -80,9 +84,10 @@ object WinGetParser {
                             rawSource = rawSource
                         )
                     )
+                } else {
+                    parseSingleLineFallback(line)?.let { packages.add(it) }
                 }
             } catch (_: Exception) {
-                // Try fallback for this single line
                 parseSingleLineFallback(line)?.let { packages.add(it) }
             }
         }
@@ -90,12 +95,17 @@ object WinGetParser {
         return packages
     }
 
+    private fun findColumnStart(header: String, columnName: String): Int? {
+        val idx = header.indexOf(columnName, ignoreCase = true)
+        return if (idx >= 0) idx else null
+    }
+
     private fun parseFallback(lines: List<String>): List<Package> {
         return lines.mapNotNull { parseSingleLineFallback(it) }
     }
 
     private fun parseSingleLineFallback(line: String): Package? {
-        if (line.isBlank() || line.startsWith("-") || line.contains("Name") && line.contains("Id")) {
+        if (line.isBlank() || line.startsWith("-") || (line.contains("Name") && line.contains("Id"))) {
             return null
         }
 
@@ -127,7 +137,6 @@ object WinGetParser {
         }
         cleaned = cleaned.replace(Regex("\\s*winget\\b", RegexOption.IGNORE_CASE), "")
             .replace(Regex("\\s*msstore\\b", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("^<\\s*"), "")
             .trim()
         return cleaned
     }
