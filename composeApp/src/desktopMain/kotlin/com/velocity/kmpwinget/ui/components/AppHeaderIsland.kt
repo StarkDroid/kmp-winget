@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.CleaningServices
 import androidx.compose.material.icons.twotone.ModeNight
 import androidx.compose.material.icons.twotone.WbSunny
 import androidx.compose.material3.Icon
@@ -38,8 +37,7 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun AppHeaderIsland(
     isDarkMode: Boolean,
-    wingetVersion: String,
-    onCleanDisk: () -> Unit
+    wingetVersion: String
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (isDarkMode) 180f else 0f,
@@ -120,33 +118,6 @@ fun AppHeaderIsland(
         }
 
         Spacer(Modifier.weight(1f))
-
-        // System Disk Cleanup Tool Button
-        Box(
-            modifier = Modifier
-                .subtleIslandControl(shape = RoundedCornerShape(8.dp), isDarkMode = isDarkMode)
-                .clickable { onCleanDisk() }
-                .padding(horizontal = 12.dp, vertical = 7.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.TwoTone.CleaningServices,
-                    contentDescription = "Cleanmgr",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = "Disk Cleanup",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-            }
-        }
-
-        Spacer(Modifier.width(10.dp))
 
         // Dark / Light Mode Toggle Button
         Box(

@@ -97,8 +97,7 @@ fun MainScreen() {
                 // Island 1: App Header Island
                 AppHeaderIsland(
                     isDarkMode = isDarkMode,
-                    wingetVersion = uiState.systemStats.wingetVersion,
-                    onCleanDisk = { viewModel.onIntent(MainUiIntent.LaunchDiskCleanup) }
+                    wingetVersion = uiState.systemStats.wingetVersion
                 )
 
                 // Island 2: Navigation & Controls Island (Tabs with Luminous Underglow + Search/Filters)
