@@ -50,6 +50,9 @@ class MainViewModel(
             is MainUiIntent.ChangeTab -> {
                 _uiState.update { it.copy(activeTab = intent.tab) }
                 updateDisplayedPackages()
+                if (intent.tab == NavigationTab.UPGRADES_AVAILABLE) {
+                    resolveLocalAppUpdates()
+                }
             }
             is MainUiIntent.UpdateSearchQuery -> {
                 _uiState.update { it.copy(searchQuery = intent.query) }
@@ -195,9 +198,6 @@ class MainViewModel(
                     }
                     updateDisplayedPackages()
                     refreshSystemStats()
-
-                    // Start background resolution for non-winget/local applications
-                    resolveLocalAppUpdates()
                 }
             } catch (_: Exception) {}
         }
@@ -232,6 +232,9 @@ class MainViewModel(
                     }
                     updateDisplayedPackages()
                     refreshSystemStats()
+
+                    // As soon as all packages are loaded, resolve local/non-winget apps
+                    resolveLocalAppUpdates()
                 }
             } catch (e: Exception) {
                 _uiState.update {

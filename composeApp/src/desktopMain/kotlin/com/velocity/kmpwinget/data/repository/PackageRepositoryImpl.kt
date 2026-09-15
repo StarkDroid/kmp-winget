@@ -73,7 +73,11 @@ class PackageRepositoryImpl : IPackageRepository {
     }.flowOn(Dispatchers.IO)
 
     override suspend fun resolveUpdatesForLocalPackages(packages: List<Package>): List<Package> = withContext(Dispatchers.IO) {
-        val eligible = packages.filter { it.availableVersion.isNullOrBlank() && it.version.isNotBlank() && !it.version.contains("Unknown", ignoreCase = true) }
+        val eligible = packages.filter {
+            it.availableVersion.isNullOrBlank() &&
+                    it.version.isNotBlank() &&
+                    !it.version.contains("Unknown", ignoreCase = true)
+        }
         if (eligible.isEmpty()) return@withContext packages
 
         val resolvedMap = mutableMapOf<String, Package>()
@@ -87,22 +91,18 @@ class PackageRepositoryImpl : IPackageRepository {
                             val cleanName = cleanNameForQuery(pkg.name)
                             if (cleanName.length < 2) return@async pkg
 
-                            // 1. Try winget show to get exact untruncated ID and version
-                            val showResult = WinGetExecutor.execute("show", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
-                            val showDetails = WinGetParser.parseShowOutput(showResult.stdout)
+                            // 1. Search in WinGet catalog
+                            var searchResult = WinGetExecutor.execute("search", "--count", "3", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
+                            var candidates = WinGetParser.parseListOutput(searchResult.stdout)
 
-                            if (showDetails != null && showDetails.version.isNotEmpty()) {
-                                if (VersionComparator.isNewer(current = pkg.version, available = showDetails.version)) {
-                                    return@async pkg.copy(
-                                        availableVersion = showDetails.version,
-                                        matchedWingetId = showDetails.id
-                                    )
+                            // Fallback to first word if multi-word name returned no candidates
+                            if (candidates.isEmpty() && cleanName.contains(" ")) {
+                                val firstWord = cleanName.substringBefore(" ").trim()
+                                if (firstWord.length >= 3) {
+                                    searchResult = WinGetExecutor.execute("search", "--count", "3", "-q", firstWord, "--accept-source-agreements", "--disable-interactivity")
+                                    candidates = WinGetParser.parseListOutput(searchResult.stdout)
                                 }
                             }
-
-                            // 2. Fallback to winget search
-                            val searchResult = WinGetExecutor.execute("search", "--count", "3", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
-                            val candidates = WinGetParser.parseListOutput(searchResult.stdout)
 
                             val matched = candidates.firstOrNull { cand ->
                                 cand.name.equals(cleanName, ignoreCase = true) ||
@@ -112,6 +112,8 @@ class PackageRepositoryImpl : IPackageRepository {
 
                             if (matched != null && VersionComparator.isNewer(current = pkg.version, available = matched.version)) {
                                 val fullId = if (matched.id.endsWith("…")) {
+                                    val showResult = WinGetExecutor.execute("show", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
+                                    val showDetails = WinGetParser.parseShowOutput(showResult.stdout)
                                     showDetails?.id ?: matched.id.removeSuffix("…")
                                 } else {
                                     matched.id
