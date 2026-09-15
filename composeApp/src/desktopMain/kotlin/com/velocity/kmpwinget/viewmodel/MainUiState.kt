@@ -19,6 +19,7 @@ data class MainUiState(
     val sortOption: PackageSortOption = PackageSortOption.NAME_ASC,
     val sourceFilter: SourceFilterOption = SourceFilterOption.ALL,
     val isRefreshing: Boolean = false,
+    val isCheckingUpdates: Boolean = false,
     val operationResult: OperationResult = OperationResult.Idle,
     val backgroundQueue: BackgroundQueueState = BackgroundQueueState(),
     val systemStats: SystemStats = SystemStats(),

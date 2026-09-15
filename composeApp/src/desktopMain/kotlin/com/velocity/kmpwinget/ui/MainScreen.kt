@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -194,7 +195,38 @@ fun MainScreen() {
                                     )
 
                                     // Table Content
-                                    if (uiState.displayedPackages.isEmpty() && !uiState.isRefreshing) {
+                                    if (targetTab == NavigationTab.UPGRADES_AVAILABLE && uiState.isCheckingUpdates) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(36.dp),
+                                                    color = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight,
+                                                    strokeWidth = 3.dp
+                                                )
+                                                Spacer(Modifier.height(16.dp))
+                                                Text(
+                                                    text = "Checking for updates...",
+                                                    style = MaterialTheme.typography.titleMedium.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                )
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(
+                                                    text = "Scanning WinGet catalog and local applications",
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    } else if (uiState.displayedPackages.isEmpty() && !uiState.isRefreshing) {
                                         EmptyStateView(
                                             activeTab = targetTab,
                                             searchQuery = uiState.searchQuery,
