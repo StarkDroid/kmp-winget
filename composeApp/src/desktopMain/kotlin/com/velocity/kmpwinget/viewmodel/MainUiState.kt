@@ -1,6 +1,8 @@
 package com.velocity.kmpwinget.viewmodel
 
 import com.velocity.kmpwinget.domain.model.BackgroundQueueState
+import com.velocity.kmpwinget.domain.model.DriverClass
+import com.velocity.kmpwinget.domain.model.DriverPackage
 import com.velocity.kmpwinget.domain.model.NavigationTab
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
@@ -24,13 +26,23 @@ data class MainUiState(
     val backgroundQueue: BackgroundQueueState = BackgroundQueueState(),
     val systemStats: SystemStats = SystemStats(),
     val packageToConfirmUninstall: Package? = null,
-    val batchUninstallConfirm: Boolean = false
+    val batchUninstallConfirm: Boolean = false,
+    val drivers: List<DriverPackage> = emptyList(),
+    val displayedDrivers: List<DriverPackage> = emptyList(),
+    val driverClassFilter: DriverClass? = null,
+    val isScanningDrivers: Boolean = false
 ) {
     val totalInstalledCount: Int
         get() = allPackages.size
 
     val updatesCount: Int
         get() = upgradablePackages.size
+
+    val totalDriversCount: Int
+        get() = drivers.size
+
+    val driverUpdatesCount: Int
+        get() = drivers.count { it.hasUpdate }
 
     val selectedCount: Int
         get() = selectedPackageIds.size

@@ -105,6 +105,7 @@ fun MainScreen() {
                     activeTab = uiState.activeTab,
                     totalInstalled = uiState.totalInstalledCount,
                     updatesAvailable = uiState.updatesCount,
+                    totalDrivers = uiState.totalDriversCount,
                     query = uiState.searchQuery,
                     onQueryChange = { viewModel.onIntent(MainUiIntent.UpdateSearchQuery(it)) },
                     sourceFilter = uiState.sourceFilter,
@@ -119,7 +120,7 @@ fun MainScreen() {
                     onRefresh = { viewModel.onIntent(MainUiIntent.Refresh(force = true)) }
                 )
 
-                // Island 3: Main Data Content Island (Table Rows or System Tools)
+                // Island 3: Main Data Content Island (Table Rows, Device Drivers, or System Tools)
                 AnimatedContent(
                     targetState = uiState.activeTab,
                     transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -133,6 +134,22 @@ fun MainScreen() {
                                 isDarkMode = isDarkMode,
                                 onLaunchDiskCleanup = { viewModel.onIntent(MainUiIntent.LaunchDiskCleanup) },
                                 onOptimizeWinget = { viewModel.onIntent(MainUiIntent.OptimizeSystem) }
+                            )
+                        }
+                        NavigationTab.DRIVERS -> {
+                            DriversIsland(
+                                drivers = uiState.drivers,
+                                displayedDrivers = uiState.displayedDrivers,
+                                selectedClass = uiState.driverClassFilter,
+                                searchQuery = uiState.searchQuery,
+                                isScanning = uiState.isScanningDrivers,
+                                isRefreshing = uiState.isRefreshing,
+                                isDarkMode = isDarkMode,
+                                onSearchQueryChange = { viewModel.onIntent(MainUiIntent.UpdateSearchQuery(it)) },
+                                onClassFilterChange = { viewModel.onIntent(MainUiIntent.FilterDriversByClass(it)) },
+                                onScanDevices = { viewModel.onIntent(MainUiIntent.RescanPnpDevices) },
+                                onRefresh = { viewModel.onIntent(MainUiIntent.Refresh(force = true)) },
+                                onUpdateDriver = { viewModel.onIntent(MainUiIntent.RequestDriverUpdate(it)) }
                             )
                         }
                         NavigationTab.ALL_PACKAGES, NavigationTab.UPGRADES_AVAILABLE -> {

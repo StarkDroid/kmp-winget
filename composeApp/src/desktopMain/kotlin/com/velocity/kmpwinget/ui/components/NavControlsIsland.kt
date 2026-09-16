@@ -43,6 +43,7 @@ fun NavControlsIsland(
     activeTab: NavigationTab,
     totalInstalled: Int,
     updatesAvailable: Int,
+    totalDrivers: Int = 0,
     query: String,
     onQueryChange: (String) -> Unit,
     sourceFilter: SourceFilterOption,
@@ -116,6 +117,16 @@ fun NavControlsIsland(
 
             GlowingNavTabItem(
                 modifier = Modifier.weight(1f),
+                title = "Device Drivers",
+                count = totalDrivers,
+                icon = Icons.TwoTone.Memory,
+                isSelected = activeTab == NavigationTab.DRIVERS,
+                isDarkMode = isDarkMode,
+                onClick = { onTabSelected(NavigationTab.DRIVERS) }
+            )
+
+            GlowingNavTabItem(
+                modifier = Modifier.weight(1f),
                 title = "System & Maintenance",
                 count = null,
                 icon = Icons.TwoTone.Build,
@@ -126,7 +137,7 @@ fun NavControlsIsland(
         }
 
         // Row 2: Search Box & Controls Bar (Only for Package Lists)
-        if (activeTab != NavigationTab.SYSTEM_TOOLS) {
+        if (activeTab != NavigationTab.SYSTEM_TOOLS && activeTab != NavigationTab.DRIVERS) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,

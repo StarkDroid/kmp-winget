@@ -1,5 +1,7 @@
 package com.velocity.kmpwinget.viewmodel
 
+import com.velocity.kmpwinget.domain.model.DriverClass
+import com.velocity.kmpwinget.domain.model.DriverPackage
 import com.velocity.kmpwinget.domain.model.NavigationTab
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageSortOption
@@ -29,4 +31,7 @@ sealed interface MainUiIntent {
     data class EnqueueBackgroundUpdates(val packages: List<Package>) : MainUiIntent
     data object ToggleQueueExpanded : MainUiIntent
     data object DismissQueue : MainUiIntent
+    data class RequestDriverUpdate(val driver: DriverPackage) : MainUiIntent
+    data object RescanPnpDevices : MainUiIntent
+    data class FilterDriversByClass(val driverClass: DriverClass?) : MainUiIntent
 }

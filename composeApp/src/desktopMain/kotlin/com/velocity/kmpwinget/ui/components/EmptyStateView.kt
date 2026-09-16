@@ -67,7 +67,7 @@ fun EmptyStateView(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    text = "No packages found",
+                    text = if (activeTab == NavigationTab.DRIVERS) "No device drivers found" else "No packages found",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -77,7 +77,11 @@ fun EmptyStateView(
                 Spacer(Modifier.height(6.dp))
 
                 Text(
-                    text = "No installed applications matched '$searchQuery'",
+                    text = if (activeTab == NavigationTab.DRIVERS) {
+                        "No device drivers matched '$searchQuery'"
+                    } else {
+                        "No installed applications matched '$searchQuery'"
+                    },
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -175,6 +179,39 @@ fun EmptyStateView(
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
+                            )
+                        )
+                    }
+                }
+            } else if (activeTab == NavigationTab.DRIVERS) {
+                Text(
+                    text = "No device drivers discovered",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .subtleIslandControl(shape = RoundedCornerShape(8.dp), isDarkMode = isDarkMode)
+                        .clickable { onRefresh() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "Scan Drivers",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         )
                     }

@@ -3,6 +3,8 @@ package com.velocity.kmpwinget.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.velocity.kmpwinget.domain.model.BackgroundQueueState
+import com.velocity.kmpwinget.domain.model.DriverClass
+import com.velocity.kmpwinget.domain.model.DriverPackage
 import com.velocity.kmpwinget.domain.model.NavigationTab
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
@@ -14,9 +16,11 @@ import com.velocity.kmpwinget.domain.model.TaskStatus
 import com.velocity.kmpwinget.domain.model.UpdateTask
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import com.velocity.kmpwinget.domain.usecase.BatchOperationUseCase
+import com.velocity.kmpwinget.domain.usecase.GetDriversUseCase
 import com.velocity.kmpwinget.domain.usecase.GetPackagesUseCase
 import com.velocity.kmpwinget.domain.usecase.SystemToolsUseCase
 import com.velocity.kmpwinget.domain.usecase.UninstallPackageUseCase
+import com.velocity.kmpwinget.domain.usecase.UpdateDriverUseCase
 import com.velocity.kmpwinget.domain.usecase.UpgradePackageUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -35,7 +39,9 @@ class MainViewModel(
     private val uninstallPackageUseCase: UninstallPackageUseCase,
     private val batchOperationUseCase: BatchOperationUseCase,
     private val systemToolsUseCase: SystemToolsUseCase,
-    private val packageRepository: IPackageRepository
+    private val packageRepository: IPackageRepository,
+    private val getDriversUseCase: GetDriversUseCase,
+    private val updateDriverUseCase: UpdateDriverUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -58,6 +64,7 @@ class MainViewModel(
             is MainUiIntent.ChangeTab -> {
                 _uiState.update { it.copy(activeTab = intent.tab) }
                 updateDisplayedPackages()
+                updateDisplayedDrivers()
 
                 if (intent.tab == NavigationTab.SYSTEM_TOOLS) {
                     startTelemetryPolling()
@@ -68,6 +75,7 @@ class MainViewModel(
             is MainUiIntent.UpdateSearchQuery -> {
                 _uiState.update { it.copy(searchQuery = intent.query) }
                 updateDisplayedPackages()
+                updateDisplayedDrivers()
             }
             is MainUiIntent.ChangeSortOption -> {
                 _uiState.update { it.copy(sortOption = intent.sort) }
@@ -180,6 +188,41 @@ class MainViewModel(
                     it.copy(backgroundQueue = BackgroundQueueState())
                 }
             }
+            is MainUiIntent.FilterDriversByClass -> {
+                _uiState.update { it.copy(driverClassFilter = intent.driverClass) }
+                updateDisplayedDrivers()
+            }
+            is MainUiIntent.RequestDriverUpdate -> {
+                viewModelScope.launch {
+                    updateDriverUseCase.execute(intent.driver).collect { result ->
+                        _uiState.update { it.copy(operationResult = result) }
+                        if (result is OperationResult.Success) {
+                            loadData(forceRefresh = true)
+                        }
+                    }
+                }
+            }
+            is MainUiIntent.RescanPnpDevices -> {
+                viewModelScope.launch {
+                    _uiState.update {
+                        it.copy(
+                            isScanningDrivers = true,
+                            operationResult = OperationResult.Loading(
+                                title = "Scanning Plug & Play Devices",
+                                message = "Scanning for hardware changes and new device drivers..."
+                            )
+                        )
+                    }
+                    val result = updateDriverUseCase.scanPnpDevices()
+                    _uiState.update {
+                        it.copy(
+                            isScanningDrivers = false,
+                            operationResult = result
+                        )
+                    }
+                    loadData(forceRefresh = true)
+                }
+            }
         }
     }
 
@@ -225,8 +268,18 @@ class MainViewModel(
                         ).firstOrNull() ?: emptyList()
                     }
 
+                    // 3. Fetch device drivers
+                    val driversDeferred = async {
+                        getDriversUseCase.execute(
+                            searchQuery = "",
+                            driverClassFilter = null,
+                            forceRefresh = forceRefresh
+                        ).firstOrNull() ?: emptyList()
+                    }
+
                     val rawInstalled = installedDeferred.await()
                     val wingetUpgrades = wingetUpgradesDeferred.await()
+                    val rawDrivers = driversDeferred.await()
 
                     // Populate initial upgrade map from WinGet
                     wingetUpgrades.forEach { upg ->
@@ -268,12 +321,14 @@ class MainViewModel(
                         state.copy(
                             allPackages = deduplicatedAll,
                             upgradablePackages = deduplicatedUpgrades,
+                            drivers = rawDrivers,
                             isRefreshing = false,
                             isCheckingUpdates = false
                         )
                     }
 
                     updateDisplayedPackages()
+                    updateDisplayedDrivers()
                     refreshSystemStats()
                 }
             } catch (e: Exception) {
@@ -293,7 +348,7 @@ class MainViewModel(
             val sourceList = when (state.activeTab) {
                 NavigationTab.ALL_PACKAGES -> state.allPackages
                 NavigationTab.UPGRADES_AVAILABLE -> state.upgradablePackages
-                NavigationTab.SYSTEM_TOOLS -> emptyList()
+                NavigationTab.SYSTEM_TOOLS, NavigationTab.DRIVERS -> emptyList()
             }
 
             val query = state.searchQuery.trim().lowercase()
@@ -330,6 +385,33 @@ class MainViewModel(
             }
 
             state.copy(displayedPackages = PackageDeduplicator.deduplicate(sorted))
+        }
+    }
+
+    private fun updateDisplayedDrivers() {
+        _uiState.update { state ->
+            val query = state.searchQuery.trim().lowercase()
+            val classFilter = state.driverClassFilter
+
+            val filtered = state.drivers.filter { driver ->
+                val matchesQuery = if (query.isBlank()) true else {
+                    driver.displayName.lowercase().contains(query) ||
+                            driver.providerName.lowercase().contains(query) ||
+                            driver.originalName.lowercase().contains(query) ||
+                            driver.publishedName.lowercase().contains(query) ||
+                            (driver.signerName?.lowercase()?.contains(query) == true)
+                }
+
+                val matchesClass = if (classFilter == null) true else driver.driverClass == classFilter
+
+                matchesQuery && matchesClass
+            }.sortedWith(
+                compareByDescending<DriverPackage> { it.hasUpdate }
+                    .thenBy { it.driverClass.ordinal }
+                    .thenBy { it.displayName.lowercase() }
+            )
+
+            state.copy(displayedDrivers = filtered)
         }
     }
 
