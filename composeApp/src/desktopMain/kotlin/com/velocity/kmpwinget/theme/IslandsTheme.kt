@@ -1,6 +1,7 @@
 package com.velocity.kmpwinget.theme
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -136,30 +137,13 @@ fun Modifier.buttonUnderglow(
     )
 
     this.drawBehind {
-        val glowHeight = 12.dp.toPx()
         val beamHeight = 2.dp.toPx()
         val width = size.width
         val height = size.height
 
-        val baseDiffuseAlpha = (if (isDarkMode) 0.32f else 0.20f) * animatedHoverAlpha.coerceAtMost(1.5f)
         val beamAlpha = (if (isDarkMode) 0.95f else 0.85f) * animatedHoverAlpha.coerceAtMost(1.0f)
 
-        // 1. Diffuse soft glow radiating upward/downward from the bottom
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color.Transparent,
-                    glowColor.copy(alpha = baseDiffuseAlpha * 0.15f),
-                    glowColor.copy(alpha = baseDiffuseAlpha)
-                ),
-                startY = (height - glowHeight).coerceAtLeast(0f),
-                endY = height
-            ),
-            topLeft = Offset(0f, (height - glowHeight).coerceAtLeast(0f)),
-            size = Size(width, glowHeight.coerceAtMost(height))
-        )
-
-        // 2. Focused bright underglow beam at the bottom edge
+        // Focused bright underglow beam at the bottom edge
         val beamInset = width * 0.08f
         val beamWidth = width - (beamInset * 2f)
 
@@ -289,6 +273,11 @@ fun UpdateUnderglowButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
+    val offsetY by animateDpAsState(
+        targetValue = if (isHovered) (-2).dp else 0.dp,
+        animationSpec = tween(150),
+        label = "updateBtnOffset"
+    )
 
     val glowColor = if (isDarkMode) AppColors.glowAccentDark else AppColors.primaryLight
     val shape = RoundedCornerShape(8.dp)
@@ -316,12 +305,7 @@ fun UpdateUnderglowButton(
 
     Box(
         modifier = modifier
-            .shadow(
-                elevation = if (isHovered) 3.dp else 0.dp,
-                shape = shape,
-                ambientColor = glowColor.copy(alpha = if (isDarkMode) 0.35f else 0.15f),
-                spotColor = glowColor.copy(alpha = if (isDarkMode) 0.45f else 0.20f)
-            )
+            .offset(y = offsetY)
             .clip(shape)
             .background(animatedBg)
             .border(1.dp, animatedStroke, shape)
@@ -374,6 +358,11 @@ fun DeleteUnderglowButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
+    val offsetY by animateDpAsState(
+        targetValue = if (isHovered) (-2).dp else 0.dp,
+        animationSpec = tween(150),
+        label = "deleteBtnOffset"
+    )
 
     val glowColor = if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
     val shape = RoundedCornerShape(8.dp)
@@ -401,12 +390,7 @@ fun DeleteUnderglowButton(
 
     Box(
         modifier = modifier
-            .shadow(
-                elevation = if (isHovered) 3.dp else 0.dp,
-                shape = shape,
-                ambientColor = glowColor.copy(alpha = if (isDarkMode) 0.35f else 0.15f),
-                spotColor = glowColor.copy(alpha = if (isDarkMode) 0.45f else 0.20f)
-            )
+            .offset(y = offsetY)
             .clip(shape)
             .background(animatedBg)
             .border(1.dp, animatedStroke, shape)
