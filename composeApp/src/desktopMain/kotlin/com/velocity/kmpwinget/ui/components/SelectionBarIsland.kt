@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Close
-import androidx.compose.material.icons.twotone.Delete
-import androidx.compose.material.icons.twotone.Download
 import androidx.compose.material.icons.twotone.SelectAll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.velocity.kmpwinget.theme.AppColors
+import com.velocity.kmpwinget.theme.DeleteUnderglowButton
+import com.velocity.kmpwinget.theme.UpdateUnderglowButton
 import com.velocity.kmpwinget.theme.subtleIslandControl
 
 @Composable
@@ -119,67 +119,20 @@ fun SelectionBarIsland(
                 // Batch Actions
                 if (selectedCount > 0) {
                     // Update Selected
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
-                            )
-                            .clickable { onBatchUpgrade() }
-                            .padding(horizontal = 12.dp, vertical = 7.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.TwoTone.Download,
-                                contentDescription = null,
-                                modifier = Modifier.size(15.dp),
-                                tint = Color.White
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "Update Selected ($selectedCount)",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            )
-                        }
-                    }
+                    UpdateUnderglowButton(
+                        text = "Update Selected ($selectedCount)",
+                        onClick = onBatchUpgrade,
+                        isDarkMode = isDarkMode
+                    )
 
                     Spacer(Modifier.width(8.dp))
 
                     // Uninstall Selected
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                if (isDarkMode) AppColors.dangerBadgeBgDark else AppColors.dangerBadgeBgLight
-                            )
-                            .border(
-                                1.dp,
-                                if (isDarkMode) AppColors.dangerRedDark.copy(alpha = 0.5f) else AppColors.dangerRedLight.copy(alpha = 0.4f),
-                                RoundedCornerShape(6.dp)
-                            )
-                            .clickable { onBatchUninstall() }
-                            .padding(horizontal = 12.dp, vertical = 7.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.TwoTone.Delete,
-                                contentDescription = null,
-                                modifier = Modifier.size(15.dp),
-                                tint = if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "Uninstall Selected ($selectedCount)",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
-                                )
-                            )
-                        }
-                    }
+                    DeleteUnderglowButton(
+                        text = "Uninstall Selected ($selectedCount)",
+                        onClick = onBatchUninstall,
+                        isDarkMode = isDarkMode
+                    )
 
                     Spacer(Modifier.width(8.dp))
                 }

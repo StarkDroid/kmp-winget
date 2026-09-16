@@ -12,10 +12,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowForward
-import androidx.compose.material.icons.twotone.Delete
-import androidx.compose.material.icons.twotone.Download
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,7 +23,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +30,9 @@ import com.velocity.kmpwinget.data.datasource.Win32IconLoader
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.theme.AppColors
-import com.velocity.kmpwinget.theme.subtleIslandControl
+import com.velocity.kmpwinget.theme.DeleteUnderglowButton
+import com.velocity.kmpwinget.theme.IslandRoundedCheckbox
+import com.velocity.kmpwinget.theme.UpdateUnderglowButton
 
 @Composable
 fun PackageTableRow(
@@ -84,17 +81,11 @@ fun PackageTableRow(
         ) {
             // Multi-Select Checkbox
             if (isMultiSelectMode) {
-                Checkbox(
+                IslandRoundedCheckbox(
                     checked = isSelected,
                     onCheckedChange = { onSelect() },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight,
-                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        checkmarkColor = if (isDarkMode) Color.Black else Color.White
-                    ),
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(end = 8.dp)
+                    isDarkMode = isDarkMode,
+                    modifier = Modifier.padding(end = 10.dp)
                 )
             }
 
@@ -255,52 +246,17 @@ fun PackageTableRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     if (pkg.hasUpdate) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
-                                )
-                                .clickable { onUpgrade() }
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.TwoTone.Download,
-                                    contentDescription = "Update",
-                                    modifier = Modifier.size(14.dp),
-                                    tint = Color.White
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = "Update",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                )
-                            }
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .subtleIslandControl(
-                                shape = RoundedCornerShape(6.dp),
-                                isDarkMode = isDarkMode
-                            )
-                            .clickable { onUninstall() }
-                            .padding(6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.TwoTone.Delete,
-                            contentDescription = "Uninstall",
-                            modifier = Modifier.size(16.dp),
-                            tint = if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
+                        UpdateUnderglowButton(
+                            text = "Update",
+                            onClick = onUpgrade,
+                            isDarkMode = isDarkMode
                         )
                     }
+
+                    DeleteUnderglowButton(
+                        onClick = onUninstall,
+                        isDarkMode = isDarkMode
+                    )
                 }
             }
         }

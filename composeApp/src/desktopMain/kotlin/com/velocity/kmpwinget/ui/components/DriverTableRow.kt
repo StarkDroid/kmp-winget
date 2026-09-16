@@ -3,7 +3,6 @@ package com.velocity.kmpwinget.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -34,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.velocity.kmpwinget.domain.model.DriverClass
 import com.velocity.kmpwinget.domain.model.DriverPackage
 import com.velocity.kmpwinget.theme.AppColors
-import com.velocity.kmpwinget.theme.subtleIslandControl
+import com.velocity.kmpwinget.theme.UpdateUnderglowButton
 
 @Composable
 fun DriverTableRow(
@@ -215,46 +214,12 @@ fun DriverTableRow(
             }
 
             // Action Button
-            Box(
-                modifier = Modifier
-                    .then(
-                        if (driver.hasUpdate) {
-                            Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
-                                )
-                                .clickable { onUpdate() }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        } else {
-                            Modifier
-                                .subtleIslandControl(
-                                    shape = RoundedCornerShape(6.dp),
-                                    isDarkMode = isDarkMode
-                                )
-                                .clickable { onUpdate() }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = if (driver.hasUpdate) Icons.TwoTone.Download else Icons.TwoTone.Refresh,
-                        contentDescription = "Update Driver",
-                        modifier = Modifier.size(14.dp),
-                        tint = if (driver.hasUpdate) Color.White else MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = if (driver.hasUpdate) "Update Driver" else "Scan / Update",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (driver.hasUpdate) Color.White else MaterialTheme.colorScheme.onSurface
-                        )
-                    )
-                }
-            }
+            UpdateUnderglowButton(
+                text = if (driver.hasUpdate) "Update Driver" else "Scan / Update",
+                onClick = onUpdate,
+                isDarkMode = isDarkMode,
+                icon = if (driver.hasUpdate) Icons.TwoTone.Download else Icons.TwoTone.Refresh
+            )
         }
 
         HorizontalDivider(
