@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowForward
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.twotone.StarBorder
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.velocity.kmpwinget.data.datasource.Win32IconLoader
+import com.velocity.kmpwinget.domain.model.FavoritesManager
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.theme.AppColors
@@ -121,16 +124,46 @@ fun PackageTableRow(
 
             // Main Details: Title on Top, Tags on Line 2
             Column(modifier = Modifier.weight(1f)) {
-                // Line 1: Clean App Title
-                Text(
-                    text = pkg.name,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    maxLines = 1
-                )
+                // Line 1: Clean App Title & Favorite Star Button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = pkg.name,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.5.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    val favoriteIds by FavoritesManager.favoriteIds
+                    val isFavorite = favoriteIds.contains(pkg.id)
+                    val starInteraction = remember { MutableInteractionSource() }
+                    val isStarHovered by starInteraction.collectIsHoveredAsState()
+
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.TwoTone.StarBorder,
+                        contentDescription = if (isFavorite) "Unpin from Quick Launch" else "Pin to Quick Launch",
+                        tint = when {
+                            isFavorite -> Color(0xFFFFB800)
+                            isStarHovered -> Color(0xFFFFD54F)
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                        },
+                        modifier = Modifier
+                            .size(15.dp)
+                            .hoverable(starInteraction)
+                            .clickable(
+                                interactionSource = starInteraction,
+                                indication = null
+                            ) {
+                                FavoritesManager.toggleFavorite(pkg.id)
+                            }
+                    )
+                }
 
                 Spacer(Modifier.height(3.dp))
 

@@ -134,10 +134,20 @@ fun NavControlsIsland(
                 isDarkMode = isDarkMode,
                 onClick = { onTabSelected(NavigationTab.SYSTEM_TOOLS) }
             )
+
+            GlowingNavTabItem(
+                modifier = Modifier.weight(1f),
+                title = "Settings",
+                count = null,
+                icon = Icons.TwoTone.Settings,
+                isSelected = activeTab == NavigationTab.SETTINGS,
+                isDarkMode = isDarkMode,
+                onClick = { onTabSelected(NavigationTab.SETTINGS) }
+            )
         }
 
         // Row 2: Search Box & Controls Bar (Only for Package Lists)
-        if (activeTab != NavigationTab.SYSTEM_TOOLS && activeTab != NavigationTab.DRIVERS) {
+        if (activeTab != NavigationTab.SYSTEM_TOOLS && activeTab != NavigationTab.DRIVERS && activeTab != NavigationTab.SETTINGS) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,

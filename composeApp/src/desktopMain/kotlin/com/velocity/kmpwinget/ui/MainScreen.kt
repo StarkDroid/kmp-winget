@@ -38,8 +38,9 @@ import com.velocity.kmpwinget.viewmodel.MainViewModel
 import org.koin.compose.koinInject
 
 @Composable
-fun MainScreen() {
-    val viewModel = koinInject<MainViewModel>()
+fun MainScreen(
+    viewModel: MainViewModel = koinInject()
+) {
     val uiState by viewModel.uiState.collectAsState()
 
     val isDarkMode = ThemeState.isDarkMode.value
@@ -142,6 +143,12 @@ fun MainScreen() {
                     modifier = Modifier.weight(1f).fillMaxWidth()
                 ) { targetTab ->
                     when (targetTab) {
+                        NavigationTab.SETTINGS -> {
+                            SettingsIsland(
+                                allPackages = uiState.allPackages,
+                                isDarkMode = isDarkMode
+                            )
+                        }
                         NavigationTab.SYSTEM_TOOLS -> {
                             SystemToolsIsland(
                                 stats = uiState.systemStats,
