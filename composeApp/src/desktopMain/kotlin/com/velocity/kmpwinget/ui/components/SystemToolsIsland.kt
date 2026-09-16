@@ -1,12 +1,12 @@
 package com.velocity.kmpwinget.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.twotone.Launch
 import androidx.compose.material.icons.twotone.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -25,6 +25,7 @@ import com.velocity.kmpwinget.domain.model.DriveInfo
 import com.velocity.kmpwinget.domain.model.LiveSystemTelemetry
 import com.velocity.kmpwinget.domain.model.SystemStats
 import com.velocity.kmpwinget.theme.AppColors
+import com.velocity.kmpwinget.theme.UpdateUnderglowButton
 import com.velocity.kmpwinget.theme.islandContainer
 import com.velocity.kmpwinget.theme.subtleIslandControl
 
@@ -606,24 +607,12 @@ private fun ActionToolCard(
 
             Spacer(Modifier.width(8.dp))
 
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(
-                        if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
-                    )
-                    .clickable { onClick() }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = buttonText,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                )
-            }
+            UpdateUnderglowButton(
+                text = buttonText,
+                onClick = onClick,
+                isDarkMode = isDarkMode,
+                icon = if (buttonText == "Launch") Icons.AutoMirrored.TwoTone.Launch else Icons.TwoTone.Cached
+            )
         }
     }
 }

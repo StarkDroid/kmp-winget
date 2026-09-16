@@ -3,6 +3,7 @@ package com.velocity.kmpwinget.domain.usecase
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageDeduplicator
 import com.velocity.kmpwinget.domain.model.PackageSortOption
+import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.domain.model.SourceFilterOption
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import kotlinx.coroutines.flow.Flow
@@ -51,9 +52,9 @@ class GetPackagesUseCase(
 
             val matchesSource = when (sourceFilter) {
                 SourceFilterOption.ALL -> true
-                SourceFilterOption.WINGET_ONLY -> pkg.source == com.velocity.kmpwinget.domain.model.PackageSource.WINGET
-                SourceFilterOption.MSSTORE_ONLY -> pkg.source == com.velocity.kmpwinget.domain.model.PackageSource.MSSTORE
-                SourceFilterOption.LOCAL_ONLY -> pkg.source == com.velocity.kmpwinget.domain.model.PackageSource.LOCAL
+                SourceFilterOption.WINGET_ONLY -> pkg.source == PackageSource.WINGET
+                SourceFilterOption.MSSTORE_ONLY -> pkg.source == PackageSource.MSSTORE
+                SourceFilterOption.LOCAL_ONLY -> pkg.source == PackageSource.LOCAL
             }
 
             matchesQuery && matchesUpgrades && matchesSource

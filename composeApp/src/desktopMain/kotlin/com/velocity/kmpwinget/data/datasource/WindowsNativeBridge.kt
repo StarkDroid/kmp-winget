@@ -89,12 +89,12 @@ object WindowsNativeBridge {
     fun applyTheme(window: Window, isDarkMode: Boolean = true): Boolean {
         if (!isWindows) return false
         val hwnd = getHWND(window) ?: return false
-        val darkResult = setDarkModeTitleBar(hwnd, true)
+        val darkResult = setDarkModeTitleBar(hwnd, isDarkMode)
 
         if (isWindows11OrGreater) {
             try {
-                val captionColor = 0x000F0C0C
-                val textColor = 0x00FFFFFF
+                val captionColor = if (isDarkMode) 0x000F0C0C else 0x00F8F9FA
+                val textColor = if (isDarkMode) 0x00FFFFFF else 0x001A1C1E
 
                 Dwmapi.INSTANCE.DwmSetWindowAttribute(
                     hwnd,
