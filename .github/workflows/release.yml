@@ -1,0 +1,173 @@
+name: Release & Package Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version Bump Type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      custom_version:
+        description: 'Custom Version (if bump_type is custom, e.g. 2.2.0)'
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Windows Distribution & Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Determine & Increment Version
+        id: versioning
+        shell: pwsh
+        run: |
+          $buildGradlePath = "composeApp/build.gradle.kts"
+          $utilPath = "composeApp/src/desktopMain/kotlin/com/velocity/kmpwinget/utils/util.kt"
+
+          # Read current version from build.gradle.kts
+          $content = Get-Content $buildGradlePath -Raw
+          if ($content -match 'version\s*=\s*"([^"]+)"') {
+              $currentVersion = $matches[1]
+          } else {
+              $currentVersion = "2.1.0"
+          }
+
+          Write-Host "Current version: $currentVersion"
+
+          $tagInput = "${{ github.ref_name }}"
+          $bumpType = "${{ github.event.inputs.bump_type }}"
+          $customVer = "${{ github.event.inputs.custom_version }}"
+
+          if ($tagInput -like "v*") {
+              $newVersion = $tagInput.TrimStart("v")
+          } elseif ($bumpType -eq "custom" -and $customVer -ne "") {
+              $newVersion = $customVer.TrimStart("v")
+          } else {
+              $parts = $currentVersion.Split('.')
+              $major = [int]$parts[0]
+              $minor = if ($parts.Length -gt 1) { [int]$parts[1] } else { 0 }
+              $patch = if ($parts.Length -gt 2) { [int]$parts[2] } else { 0 }
+
+              switch ($bumpType) {
+                  "major" { $major++; $minor = 0; $patch = 0 }
+                  "minor" { $minor++; $patch = 0 }
+                  default { $patch++ }
+              }
+              $newVersion = "$major.$minor.$patch"
+          }
+
+          Write-Host "New Target Version: $newVersion"
+          "NEW_VERSION=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "TAG_NAME=v$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+          # Update build.gradle.kts
+          (Get-Content $buildGradlePath) -replace 'version\s*=\s*"[^"]+"', "version = `"$newVersion`"" | Set-Content $buildGradlePath
+
+          # Update util.kt
+          (Get-Content $utilPath) -replace 'const val VERSION\s*=\s*"[^"]+"', "const val VERSION = `"$newVersion`"" | Set-Content $utilPath
+
+      - name: Build Windows Installers (.msi & .exe)
+        run: ./gradlew packageDistributionForCurrentOS --no-daemon
+
+      - name: Generate Checksums & Human-Readable Changelog
+        id: changelog
+        shell: pwsh
+        run: |
+          $newVer = $env:NEW_VERSION
+          $msiPath = Get-ChildItem -Path "composeApp/build/compose/binaries/main/msi" -Filter "*.msi" | Select-Object -First 1
+          $exePath = Get-ChildItem -Path "composeApp/build/compose/binaries/main/exe" -Filter "*.exe" | Select-Object -First 1
+
+          $msiHash = if ($msiPath) { (Get-FileHash -Path $msiPath.FullName -Algorithm SHA256).Hash } else { "N/A" }
+          $exeHash = if ($exePath) { (Get-FileHash -Path $exePath.FullName -Algorithm SHA256).Hash } else { "N/A" }
+
+          # Find previous tag for changelog
+          $prevTag = git describe --tags --abbrev=0 HEAD^ 2>$null
+          if (-not $prevTag) {
+              $rawCommits = git log --pretty=format:"%s" -n 25
+          } else {
+              $rawCommits = git log "$prevTag..HEAD" --pretty=format:"%s"
+          }
+
+          $features = @()
+          $improvements = @()
+          $fixes = @()
+
+          foreach ($msg in ($rawCommits -split "`n")) {
+              $clean = $msg.Trim()
+              if ($clean -match "^(Add|Implement|Support|Create)\b") {
+                  $features += "- ✨ $clean"
+              } elseif ($clean -match "^(Fix|Resolve|Correct)\b") {
+                  $fixes += "- 🐛 $clean"
+              } elseif ($clean -match "^(Update|Refactor|Enhance|Improve|Clean|Optimize)\b") {
+                  $improvements += "- ⚡ $clean"
+              } elseif ($clean -ne "") {
+                  $improvements += "- 🔹 $clean"
+              }
+          }
+
+          $body = @"
+          # KMP WinGet Package Manager v$newVer
+
+          A modern, high-performance package manager for Windows 10 & 11 built with Kotlin Multiplatform and Material Design 3 Islands layout.
+
+          $(if ($features.Count -gt 0) { "### 🚀 What's New`n" + ($features -join "`n") })
+
+          $(if ($improvements.Count -gt 0) { "### 🛠️ Improvements & Refinements`n" + ($improvements -join "`n") })
+
+          $(if ($fixes.Count -gt 0) { "### 🐛 Bug Fixes`n" + ($fixes -join "`n") })
+
+          ---
+
+          ### 📦 Installation Packages & Checksums (SHA-256)
+
+          | Package | Format | SHA-256 Checksum |
+          | :--- | :--- | :--- |
+          | **$($msiPath.Name)** | Windows Installer (`.msi`) | ``$msiHash`` |
+          | **$($exePath.Name)** | Executable Installer (`.exe`) | ``$exeHash`` |
+
+          ---
+          *Built automatically with GitHub Actions.*
+          "@
+
+          $body | Out-File -FilePath "RELEASE_NOTES.md" -Encoding utf8
+          Get-Content "RELEASE_NOTES.md"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          name: "v${{ env.NEW_VERSION }}"
+          body_path: RELEASE_NOTES.md
+          files: |
+            composeApp/build/compose/binaries/main/msi/*.msi
+            composeApp/build/compose/binaries/main/exe/*.exe
+          draft: false
+          prerelease: false
