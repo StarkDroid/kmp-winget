@@ -23,13 +23,10 @@ import com.velocity.kmpwinget.domain.usecase.UninstallPackageUseCase
 import com.velocity.kmpwinget.domain.usecase.UpdateDriverUseCase
 import com.velocity.kmpwinget.domain.usecase.UpgradePackageUseCase
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -47,7 +44,10 @@ class MainViewModel(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    private var scanJob: Job? = null
+    private var packagesJob: Job? = null
+    private var upgradesJob: Job? = null
+    private var driversJob: Job? = null
+    private var localResolutionJob: Job? = null
     private var queueWorkerJob: Job? = null
     private var telemetryJob: Job? = null
 
@@ -258,98 +258,159 @@ class MainViewModel(
             )
         }
 
-        scanJob?.cancel()
-        scanJob = viewModelScope.launch {
+        // a) packagesJob: immediately collects getPackagesUseCase (first emission <30ms from registry, second emission ~1.2s from winget list)
+        packagesJob?.cancel()
+        packagesJob = viewModelScope.launch {
+            var lastEmittedPackages: List<Package> = emptyList()
             try {
-                coroutineScope {
-                    // 1. Fetch raw installed packages flow
-                    val installedDeferred = async {
-                        getPackagesUseCase.execute(
-                            showUpgradesOnly = false,
-                            forceRefresh = forceRefresh
-                        ).firstOrNull() ?: emptyList()
-                    }
-
-                    // 2. Fetch authoritative WinGet upgrades
-                    val wingetUpgradesDeferred = async {
-                        getPackagesUseCase.execute(
-                            showUpgradesOnly = true,
-                            forceRefresh = forceRefresh
-                        ).firstOrNull() ?: emptyList()
-                    }
-
-                    // 3. Fetch device drivers
-                    val driversDeferred = async {
-                        getDriversUseCase.execute(
-                            searchQuery = "",
-                            driverClassFilter = null,
-                            forceRefresh = forceRefresh
-                        ).firstOrNull() ?: emptyList()
-                    }
-
-                    val rawInstalled = installedDeferred.await()
-                    val wingetUpgrades = wingetUpgradesDeferred.await()
-                    val rawDrivers = driversDeferred.await()
-
-                    // Populate initial upgrade map from WinGet
-                    wingetUpgrades.forEach { upg ->
-                        if (!upg.availableVersion.isNullOrBlank()) {
-                            knownUpgradeMap[upg.id] = upg.availableVersion
-                        }
-                    }
-
-                    // 3. Resolve local/non-winget applications in background concurrently
-                    val localApps = rawInstalled.filter { it.isLocal && !knownUpgradeMap.containsKey(it.id) }
-                    val resolvedLocalApps = if (localApps.isNotEmpty()) {
-                        packageRepository.resolveUpdatesForLocalPackages(localApps)
-                    } else emptyList()
-
-                    resolvedLocalApps.filter { it.hasUpdate }.forEach { pkg ->
-                        if (!pkg.availableVersion.isNullOrBlank()) {
-                            knownUpgradeMap[pkg.id] = pkg.availableVersion
-                        }
-                    }
-
-                    // 4. Merge all packages and upgrades into a single authoritative set
-                    val annotatedAll = rawInstalled.map { pkg ->
+                var emissionCount = 0
+                getPackagesUseCase.execute(
+                    showUpgradesOnly = false,
+                    forceRefresh = forceRefresh
+                ).collect { packages ->
+                    emissionCount++
+                    lastEmittedPackages = packages
+                    val annotated = packages.map { pkg ->
                         val updateVer = knownUpgradeMap[pkg.id]
-                        if (!updateVer.isNullOrBlank()) {
-                            val matchedId = resolvedLocalApps.firstOrNull { it.id == pkg.id }?.matchedWingetId ?: pkg.matchedWingetId
-                            pkg.copy(availableVersion = updateVer, matchedWingetId = matchedId)
+                        if (!updateVer.isNullOrBlank() && pkg.availableVersion != updateVer) {
+                            pkg.copy(availableVersion = updateVer)
                         } else {
                             pkg
                         }
                     }
-
-                    val deduplicatedAll = PackageDeduplicator.deduplicate(annotatedAll)
-                    val deduplicatedUpgrades = PackageDeduplicator.deduplicate(
-                        deduplicatedAll.filter { it.hasUpdate }.ifEmpty { wingetUpgrades }
-                    )
-
-                    // 5. Atomically update UI state only after all updates are 100% loaded
+                    val deduplicated = PackageDeduplicator.deduplicate(annotated)
                     _uiState.update { state ->
                         state.copy(
-                            allPackages = deduplicatedAll,
-                            upgradablePackages = deduplicatedUpgrades,
-                            drivers = rawDrivers,
-                            isRefreshing = false,
-                            isCheckingUpdates = false
+                            allPackages = deduplicated,
+                            isRefreshing = if (emissionCount > 1) false else state.isRefreshing
                         )
                     }
-
                     updateDisplayedPackages()
-                    updateDisplayedDrivers()
                     refreshSystemStats()
+
+                    if (emissionCount > 1) {
+                        resolveLocalAppUpdates(deduplicated)
+                    }
+                }
+                if (emissionCount == 1) {
+                    val deduplicated = PackageDeduplicator.deduplicate(lastEmittedPackages)
+                    resolveLocalAppUpdates(deduplicated)
                 }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isRefreshing = false,
-                        isCheckingUpdates = false,
                         operationResult = OperationResult.Error("Failed to load packages: ${e.message}")
                     )
                 }
+            } finally {
+                _uiState.update { it.copy(isRefreshing = false) }
             }
+        }
+
+        // b) upgradesJob: immediately collects getPackagesUseCase with showUpgradesOnly = true (~1.5s)
+        upgradesJob?.cancel()
+        upgradesJob = viewModelScope.launch {
+            try {
+                getPackagesUseCase.execute(
+                    showUpgradesOnly = true,
+                    forceRefresh = forceRefresh
+                ).collect { upgrades ->
+                    upgrades.forEach { upg ->
+                        if (!upg.availableVersion.isNullOrBlank()) {
+                            knownUpgradeMap[upg.id] = upg.availableVersion
+                        }
+                    }
+                    val deduplicatedUpgrades = PackageDeduplicator.deduplicate(upgrades)
+                    _uiState.update { state ->
+                        val currentLocalUpgrades = state.allPackages.filter { it.hasUpdate && it.isLocal }
+                        val combinedUpgrades = PackageDeduplicator.deduplicate(deduplicatedUpgrades + currentLocalUpgrades)
+
+                        val updatedAll = state.allPackages.map { pkg ->
+                            val updateVer = knownUpgradeMap[pkg.id]
+                            if (!updateVer.isNullOrBlank() && pkg.availableVersion != updateVer) {
+                                pkg.copy(availableVersion = updateVer)
+                            } else {
+                                pkg
+                            }
+                        }
+                        state.copy(
+                            allPackages = PackageDeduplicator.deduplicate(updatedAll),
+                            upgradablePackages = combinedUpgrades,
+                            isCheckingUpdates = false
+                        )
+                    }
+                    updateDisplayedPackages()
+                    refreshSystemStats()
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isCheckingUpdates = false) }
+            } finally {
+                _uiState.update { it.copy(isCheckingUpdates = false) }
+            }
+        }
+
+        // c) driversJob: immediately collects getDriversUseCase (~0.1s)
+        driversJob?.cancel()
+        driversJob = viewModelScope.launch {
+            try {
+                getDriversUseCase.execute(
+                    forceRefresh = forceRefresh
+                ).collect { rawDrivers ->
+                    _uiState.update { state ->
+                        state.copy(drivers = rawDrivers)
+                    }
+                    updateDisplayedDrivers()
+                    refreshSystemStats()
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    private fun resolveLocalAppUpdates(currentPackages: List<Package>) {
+        localResolutionJob?.cancel()
+        localResolutionJob = viewModelScope.launch {
+            try {
+                val localApps = currentPackages.filter { it.isLocal && !knownUpgradeMap.containsKey(it.id) }
+                if (localApps.isEmpty()) return@launch
+
+                val resolvedLocalApps = packageRepository.resolveUpdatesForLocalPackages(localApps)
+                val newlyUpgraded = resolvedLocalApps.filter { it.hasUpdate }
+
+                if (newlyUpgraded.isNotEmpty()) {
+                    newlyUpgraded.forEach { pkg ->
+                        if (!pkg.availableVersion.isNullOrBlank()) {
+                            knownUpgradeMap[pkg.id] = pkg.availableVersion
+                        }
+                    }
+
+                    _uiState.update { state ->
+                        val resolvedMap = resolvedLocalApps.associateBy { it.id }
+                        val updatedAll = state.allPackages.map { pkg ->
+                            val resolved = resolvedMap[pkg.id]
+                            if (resolved != null && resolved.hasUpdate) {
+                                pkg.copy(
+                                    availableVersion = resolved.availableVersion,
+                                    matchedWingetId = resolved.matchedWingetId
+                                )
+                            } else {
+                                pkg
+                            }
+                        }
+                        val dedupAll = PackageDeduplicator.deduplicate(updatedAll)
+                        val dedupUpgrades = PackageDeduplicator.deduplicate(
+                            state.upgradablePackages + dedupAll.filter { it.hasUpdate }
+                        )
+                        state.copy(
+                            allPackages = dedupAll,
+                            upgradablePackages = dedupUpgrades
+                        )
+                    }
+                    updateDisplayedPackages()
+                    refreshSystemStats()
+                }
+            } catch (_: Exception) {}
         }
     }
 

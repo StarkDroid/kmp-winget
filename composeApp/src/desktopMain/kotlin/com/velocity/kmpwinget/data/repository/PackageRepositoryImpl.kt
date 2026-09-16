@@ -28,15 +28,18 @@ class PackageRepositoryImpl : IPackageRepository {
             return@flow
         }
 
-        // 1. Fast initial emission from registry if cache is empty
-        if (cachedPackages.isEmpty()) {
-            val fastRegistryApps = WindowsRegistryScanner.scanInstalledApps()
+        // 1. Fast initial emission from cache or Windows Registry (<30ms)
+        var fastRegistryApps: List<Package> = emptyList()
+        if (cachedPackages.isNotEmpty()) {
+            emit(cachedPackages)
+        } else {
+            fastRegistryApps = WindowsRegistryScanner.scanInstalledApps()
             if (fastRegistryApps.isNotEmpty()) {
                 emit(PackageDeduplicator.deduplicate(fastRegistryApps))
             }
         }
 
-        // 2. Real-time authoritative list from WinGet CLI
+        // 2. Real-time authoritative list from WinGet CLI (~1.2s)
         val result = WinGetExecutor.execute("list", "--accept-source-agreements", "--disable-interactivity")
         val packages = WinGetParser.parseListOutput(result.stdout)
 
@@ -50,7 +53,15 @@ class PackageRepositoryImpl : IPackageRepository {
                 }
             }
 
-            val deduplicated = PackageDeduplicator.deduplicate(mergedPackages)
+            val combined = if (fastRegistryApps.isNotEmpty()) {
+                mergedPackages + fastRegistryApps
+            } else if (cachedPackages.isNotEmpty()) {
+                mergedPackages + cachedPackages.filter { it.isLocal }
+            } else {
+                mergedPackages
+            }
+
+            val deduplicated = PackageDeduplicator.deduplicate(combined)
             cachedPackages = deduplicated
             emit(deduplicated)
         } else if (cachedPackages.isNotEmpty()) {
@@ -64,6 +75,17 @@ class PackageRepositoryImpl : IPackageRepository {
             return@flow
         }
 
+        // 1. Fast initial emission from cache or known upgradable packages
+        if (cachedUpgrades.isNotEmpty()) {
+            emit(cachedUpgrades)
+        } else {
+            val knownFromCached = cachedPackages.filter { it.hasUpdate }
+            if (knownFromCached.isNotEmpty()) {
+                emit(knownFromCached)
+            }
+        }
+
+        // 2. Real-time authoritative upgrades from WinGet CLI (~1.5s)
         val result = WinGetExecutor.execute("list", "--upgrade-available", "--accept-source-agreements", "--disable-interactivity")
         val upgrades = WinGetParser.parseListOutput(result.stdout).filter { it.hasUpdate }
         val deduplicated = PackageDeduplicator.deduplicate(upgrades)
