@@ -130,26 +130,26 @@ fun Modifier.buttonUnderglow(
     isHovered: Boolean = false
 ): Modifier = composed {
     val animatedHoverAlpha by animateFloatAsState(
-        targetValue = if (isHovered) 1.25f else 0.85f,
+        targetValue = if (isHovered) 1.35f else 0.9f,
         animationSpec = tween(durationMillis = 150),
         label = "btnGlowHover"
     )
 
     this.drawBehind {
-        val glowHeight = 10.dp.toPx()
+        val glowHeight = 12.dp.toPx()
         val beamHeight = 2.dp.toPx()
         val width = size.width
         val height = size.height
 
-        val baseDiffuseAlpha = (if (isDarkMode) 0.28f else 0.18f) * animatedHoverAlpha.coerceAtMost(1.5f)
-        val beamAlpha = (if (isDarkMode) 0.90f else 0.80f) * animatedHoverAlpha.coerceAtMost(1.0f)
+        val baseDiffuseAlpha = (if (isDarkMode) 0.32f else 0.20f) * animatedHoverAlpha.coerceAtMost(1.5f)
+        val beamAlpha = (if (isDarkMode) 0.95f else 0.85f) * animatedHoverAlpha.coerceAtMost(1.0f)
 
         // 1. Diffuse soft glow radiating upward/downward from the bottom
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
                     Color.Transparent,
-                    glowColor.copy(alpha = baseDiffuseAlpha * 0.2f),
+                    glowColor.copy(alpha = baseDiffuseAlpha * 0.15f),
                     glowColor.copy(alpha = baseDiffuseAlpha)
                 ),
                 startY = (height - glowHeight).coerceAtLeast(0f),
@@ -167,9 +167,9 @@ fun Modifier.buttonUnderglow(
             brush = Brush.horizontalGradient(
                 listOf(
                     Color.Transparent,
+                    glowColor.copy(alpha = beamAlpha * 0.85f),
                     glowColor.copy(alpha = beamAlpha),
-                    glowColor,
-                    glowColor.copy(alpha = beamAlpha),
+                    glowColor.copy(alpha = beamAlpha * 0.85f),
                     Color.Transparent
                 ),
                 startX = beamInset,
@@ -291,31 +291,40 @@ fun UpdateUnderglowButton(
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val glowColor = if (isDarkMode) AppColors.glowAccentDark else AppColors.primaryLight
-    val shape = RoundedCornerShape(6.dp)
+    val shape = RoundedCornerShape(8.dp)
 
-    val baseBg = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
-    val hoverBg = if (isDarkMode) AppColors.glowAccentDark else Color(0xFF4F40EE)
+    val defaultBg = if (isDarkMode) Color(0x1F9D8CFF) else Color(0x145B4DFF)
+    val hoverBg = if (isDarkMode) Color(0x359D8CFF) else Color(0x245B4DFF)
     val animatedBg by animateColorAsState(
-        targetValue = if (isHovered) hoverBg else baseBg,
+        targetValue = if (isHovered) hoverBg else defaultBg,
         animationSpec = tween(150),
         label = "updateBtnBg"
     )
 
+    val strokeColor = if (isDarkMode) {
+        if (isHovered) Color(0x669D8CFF) else Color(0x339D8CFF)
+    } else {
+        if (isHovered) Color(0x555B4DFF) else Color(0x265B4DFF)
+    }
+    val animatedStroke by animateColorAsState(
+        targetValue = strokeColor,
+        animationSpec = tween(150),
+        label = "updateBtnStroke"
+    )
+
+    val contentColor = if (isDarkMode) AppColors.primaryDark else AppColors.primaryLight
+
     Box(
         modifier = modifier
             .shadow(
-                elevation = if (isHovered) 4.dp else 1.dp,
+                elevation = if (isHovered) 3.dp else 0.dp,
                 shape = shape,
-                ambientColor = glowColor.copy(alpha = if (isDarkMode) 0.5f else 0.25f),
-                spotColor = glowColor.copy(alpha = if (isDarkMode) 0.6f else 0.35f)
+                ambientColor = glowColor.copy(alpha = if (isDarkMode) 0.35f else 0.15f),
+                spotColor = glowColor.copy(alpha = if (isDarkMode) 0.45f else 0.20f)
             )
             .clip(shape)
             .background(animatedBg)
-            .border(
-                1.dp,
-                if (isDarkMode) Color(0x44FFFFFF) else Color(0x22FFFFFF),
-                shape
-            )
+            .border(1.dp, animatedStroke, shape)
             .buttonUnderglow(
                 isDarkMode = isDarkMode,
                 glowColor = glowColor,
@@ -326,7 +335,7 @@ fun UpdateUnderglowButton(
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -337,16 +346,16 @@ fun UpdateUnderglowButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = text,
-                    modifier = Modifier.size(14.dp),
-                    tint = Color.White
+                    modifier = Modifier.size(15.dp),
+                    tint = contentColor
                 )
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(6.dp))
             }
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = contentColor
                 )
             )
         }
@@ -367,10 +376,10 @@ fun DeleteUnderglowButton(
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val glowColor = if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
-    val shape = RoundedCornerShape(6.dp)
+    val shape = RoundedCornerShape(8.dp)
 
-    val defaultBg = if (isDarkMode) AppColors.dangerBadgeBgDark else AppColors.dangerBadgeBgLight
-    val hoverBg = if (isDarkMode) Color(0xFF5C0E0E) else Color(0xFFFEE2E2)
+    val defaultBg = if (isDarkMode) Color(0x1CFF8383) else Color(0x12DC2626)
+    val hoverBg = if (isDarkMode) Color(0x35FF8383) else Color(0x22DC2626)
     val animatedBg by animateColorAsState(
         targetValue = if (isHovered) hoverBg else defaultBg,
         animationSpec = tween(150),
@@ -378,9 +387,9 @@ fun DeleteUnderglowButton(
     )
 
     val strokeColor = if (isDarkMode) {
-        if (isHovered) AppColors.dangerRedDark.copy(alpha = 0.8f) else AppColors.dangerRedDark.copy(alpha = 0.45f)
+        if (isHovered) Color(0x66FF8383) else Color(0x33FF8383)
     } else {
-        if (isHovered) AppColors.dangerRedLight.copy(alpha = 0.7f) else AppColors.dangerRedLight.copy(alpha = 0.35f)
+        if (isHovered) Color(0x55DC2626) else Color(0x26DC2626)
     }
     val animatedStroke by animateColorAsState(
         targetValue = strokeColor,
@@ -388,13 +397,15 @@ fun DeleteUnderglowButton(
         label = "deleteBtnStroke"
     )
 
+    val contentColor = if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
+
     Box(
         modifier = modifier
             .shadow(
                 elevation = if (isHovered) 3.dp else 0.dp,
                 shape = shape,
-                ambientColor = glowColor.copy(alpha = if (isDarkMode) 0.4f else 0.2f),
-                spotColor = glowColor.copy(alpha = if (isDarkMode) 0.5f else 0.25f)
+                ambientColor = glowColor.copy(alpha = if (isDarkMode) 0.35f else 0.15f),
+                spotColor = glowColor.copy(alpha = if (isDarkMode) 0.45f else 0.20f)
             )
             .clip(shape)
             .background(animatedBg)
@@ -411,7 +422,7 @@ fun DeleteUnderglowButton(
             )
             .padding(
                 if (text != null) PaddingValues(horizontal = 12.dp, vertical = 7.dp)
-                else PaddingValues(6.dp)
+                else PaddingValues(7.dp)
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -422,8 +433,8 @@ fun DeleteUnderglowButton(
             Icon(
                 imageVector = Icons.TwoTone.Delete,
                 contentDescription = text ?: "Uninstall",
-                modifier = Modifier.size(if (text != null) 15.dp else 16.dp),
-                tint = if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
+                modifier = Modifier.size(15.dp),
+                tint = contentColor
             )
             if (text != null) {
                 Spacer(Modifier.width(6.dp))
@@ -431,7 +442,7 @@ fun DeleteUnderglowButton(
                     text = text,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        color = if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
+                        color = contentColor
                     )
                 )
             }
