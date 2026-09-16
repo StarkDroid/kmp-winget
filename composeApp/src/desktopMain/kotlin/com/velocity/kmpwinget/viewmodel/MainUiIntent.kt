@@ -32,6 +32,9 @@ sealed interface MainUiIntent {
     data object ToggleQueueExpanded : MainUiIntent
     data object DismissQueue : MainUiIntent
     data class RequestDriverUpdate(val driver: DriverPackage) : MainUiIntent
+    data class RequestDriverDelete(val driver: DriverPackage) : MainUiIntent
+    data class ConfirmDriverDelete(val driver: DriverPackage) : MainUiIntent
+    data object DismissDriverDeleteConfirm : MainUiIntent
     data object RescanPnpDevices : MainUiIntent
     data class FilterDriversByClass(val driverClass: DriverClass?) : MainUiIntent
 }

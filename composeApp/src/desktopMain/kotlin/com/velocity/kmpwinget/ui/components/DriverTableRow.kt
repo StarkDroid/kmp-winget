@@ -33,13 +33,15 @@ import androidx.compose.ui.unit.sp
 import com.velocity.kmpwinget.domain.model.DriverClass
 import com.velocity.kmpwinget.domain.model.DriverPackage
 import com.velocity.kmpwinget.theme.AppColors
+import com.velocity.kmpwinget.theme.DeleteUnderglowButton
 import com.velocity.kmpwinget.theme.UpdateUnderglowButton
 
 @Composable
 fun DriverTableRow(
     driver: DriverPackage,
     isDarkMode: Boolean,
-    onUpdate: () -> Unit
+    onUpdate: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
@@ -213,13 +215,23 @@ fun DriverTableRow(
                 }
             }
 
-            // Action Button
-            UpdateUnderglowButton(
-                text = if (driver.hasUpdate) "Update Driver" else "Scan / Update",
-                onClick = onUpdate,
-                isDarkMode = isDarkMode,
-                icon = if (driver.hasUpdate) Icons.TwoTone.Download else Icons.TwoTone.Refresh
-            )
+            // Action Buttons
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                UpdateUnderglowButton(
+                    text = if (driver.hasUpdate) "Update Driver" else "Scan / Update",
+                    onClick = onUpdate,
+                    isDarkMode = isDarkMode,
+                    icon = if (driver.hasUpdate) Icons.TwoTone.Download else Icons.TwoTone.Refresh
+                )
+
+                DeleteUnderglowButton(
+                    onClick = onDelete,
+                    isDarkMode = isDarkMode
+                )
+            }
         }
 
         HorizontalDivider(

@@ -70,6 +70,20 @@ fun MainScreen() {
             )
         }
 
+        // Driver Delete Confirmation Dialog
+        if (uiState.driverToConfirmDelete != null) {
+            ConfirmDriverDeleteDialog(
+                driver = uiState.driverToConfirmDelete,
+                isDarkMode = isDarkMode,
+                onConfirm = {
+                    uiState.driverToConfirmDelete?.let {
+                        viewModel.onIntent(MainUiIntent.ConfirmDriverDelete(it))
+                    }
+                },
+                onDismiss = { viewModel.onIntent(MainUiIntent.DismissDriverDeleteConfirm) }
+            )
+        }
+
         // Batch Uninstall Confirmation Dialog
         if (uiState.batchUninstallConfirm && uiState.selectedCount > 0) {
             ConfirmUninstallDialog(
@@ -149,7 +163,8 @@ fun MainScreen() {
                                 onClassFilterChange = { viewModel.onIntent(MainUiIntent.FilterDriversByClass(it)) },
                                 onScanDevices = { viewModel.onIntent(MainUiIntent.RescanPnpDevices) },
                                 onRefresh = { viewModel.onIntent(MainUiIntent.Refresh(force = true)) },
-                                onUpdateDriver = { viewModel.onIntent(MainUiIntent.RequestDriverUpdate(it)) }
+                                onUpdateDriver = { viewModel.onIntent(MainUiIntent.RequestDriverUpdate(it)) },
+                                onDeleteDriver = { viewModel.onIntent(MainUiIntent.RequestDriverDelete(it)) }
                             )
                         }
                         NavigationTab.ALL_PACKAGES, NavigationTab.UPGRADES_AVAILABLE -> {

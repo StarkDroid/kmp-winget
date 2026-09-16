@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
 
 class DriverRepositoryImpl : IDriverRepository {
 
@@ -109,6 +112,78 @@ class DriverRepositoryImpl : IDriverRepository {
             emit(OperationResult.Success("Driver update completed for ${driver.displayName}", logOutput = finalLog))
         } else {
             emit(OperationResult.Success("PnP device driver scan completed", logOutput = finalLog))
+        }
+    }.flowOn(Dispatchers.IO)
+
+    override suspend fun deleteDriver(driver: DriverPackage): Flow<OperationResult> = flow {
+        emit(
+            OperationResult.Loading(
+                title = "Deleting Driver Package",
+                message = "Uninstalling ${driver.publishedName} (${driver.displayName}) from Windows Driver Store...",
+                currentProgress = 0.2f
+            )
+        )
+
+        val logOutput = StringBuilder()
+        var isSuccess = false
+
+        try {
+            val process = ProcessBuilder("pnputil.exe", "/delete-driver", driver.publishedName, "/uninstall")
+                .redirectErrorStream(true)
+                .start()
+
+            val reader = BufferedReader(InputStreamReader(process.inputStream, StandardCharsets.UTF_8))
+            try {
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    if (line != null && line!!.isNotBlank()) {
+                        logOutput.appendLine(line)
+                        emit(
+                            OperationResult.Loading(
+                                title = "Deleting Driver Package",
+                                message = line!!.take(80),
+                                currentProgress = 0.6f,
+                                logOutput = logOutput.toString()
+                            )
+                        )
+                    }
+                }
+                process.waitFor()
+                val exitVal = process.exitValue()
+                val text = logOutput.toString()
+                if (exitVal == 0 || text.contains("deleted successfully", ignoreCase = true) || text.contains("Driver package uninstalled", ignoreCase = true)) {
+                    isSuccess = true
+                }
+            } finally {
+                reader.close()
+                process.destroy()
+            }
+
+            val finalLog = logOutput.toString()
+            if (isSuccess) {
+                cachedDrivers = cachedDrivers.filterNot { it.publishedName.equals(driver.publishedName, ignoreCase = true) }
+                emit(
+                    OperationResult.Success(
+                        message = "Driver package ${driver.publishedName} successfully deleted and uninstalled.",
+                        logOutput = finalLog
+                    )
+                )
+            } else {
+                emit(
+                    OperationResult.Error(
+                        message = "Failed to delete driver package ${driver.publishedName}",
+                        details = finalLog.lines().filter { it.isNotBlank() }.takeLast(5).joinToString("\n"),
+                        logOutput = finalLog
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            emit(
+                OperationResult.Error(
+                    message = "Error deleting driver: ${e.message}",
+                    logOutput = logOutput.toString()
+                )
+            )
         }
     }.flowOn(Dispatchers.IO)
 

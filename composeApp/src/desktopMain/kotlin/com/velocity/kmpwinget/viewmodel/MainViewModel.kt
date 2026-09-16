@@ -202,6 +202,16 @@ class MainViewModel(
                     }
                 }
             }
+            is MainUiIntent.RequestDriverDelete -> {
+                _uiState.update { it.copy(driverToConfirmDelete = intent.driver) }
+            }
+            is MainUiIntent.ConfirmDriverDelete -> {
+                _uiState.update { it.copy(driverToConfirmDelete = null) }
+                deleteSingleDriver(intent.driver)
+            }
+            is MainUiIntent.DismissDriverDeleteConfirm -> {
+                _uiState.update { it.copy(driverToConfirmDelete = null) }
+            }
             is MainUiIntent.RescanPnpDevices -> {
                 viewModelScope.launch {
                     _uiState.update {
@@ -529,6 +539,17 @@ class MainViewModel(
     private fun uninstallSingle(pkg: Package) {
         viewModelScope.launch {
             uninstallPackageUseCase.execute(pkg.id, pkg.name).collect { result ->
+                _uiState.update { it.copy(operationResult = result) }
+                if (result is OperationResult.Success) {
+                    loadData(forceRefresh = true)
+                }
+            }
+        }
+    }
+
+    private fun deleteSingleDriver(driver: DriverPackage) {
+        viewModelScope.launch {
+            updateDriverUseCase.deleteDriver(driver).collect { result ->
                 _uiState.update { it.copy(operationResult = result) }
                 if (result is OperationResult.Success) {
                     loadData(forceRefresh = true)

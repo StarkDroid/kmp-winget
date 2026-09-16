@@ -12,6 +12,10 @@ class UpdateDriverUseCase(
         return driverRepository.updateDriver(driver)
     }
 
+    suspend fun deleteDriver(driver: DriverPackage): Flow<OperationResult> {
+        return driverRepository.deleteDriver(driver)
+    }
+
     suspend fun scanPnpDevices(): OperationResult {
         return driverRepository.scanPnpDevices()
     }

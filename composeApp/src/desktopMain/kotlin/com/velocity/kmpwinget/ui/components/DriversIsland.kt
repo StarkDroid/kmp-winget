@@ -53,7 +53,8 @@ fun DriversIsland(
     onClassFilterChange: (DriverClass?) -> Unit,
     onScanDevices: () -> Unit,
     onRefresh: () -> Unit,
-    onUpdateDriver: (DriverPackage) -> Unit
+    onUpdateDriver: (DriverPackage) -> Unit,
+    onDeleteDriver: (DriverPackage) -> Unit
 ) {
     val listState = rememberLazyListState()
     var isFilterMenuOpen by remember { mutableStateOf(false) }
@@ -379,7 +380,7 @@ fun DriversIsland(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
-                    modifier = Modifier.padding(end = 120.dp)
+                    modifier = Modifier.padding(end = 160.dp)
                 )
             }
 
@@ -442,7 +443,8 @@ fun DriversIsland(
                             DriverTableRow(
                                 driver = driver,
                                 isDarkMode = isDarkMode,
-                                onUpdate = { onUpdateDriver(driver) }
+                                onUpdate = { onUpdateDriver(driver) },
+                                onDelete = { onDeleteDriver(driver) }
                             )
                         }
                     }

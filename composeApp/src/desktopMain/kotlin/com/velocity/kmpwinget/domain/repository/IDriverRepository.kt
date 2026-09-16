@@ -8,5 +8,6 @@ interface IDriverRepository {
     fun getInstalledDrivers(forceRefresh: Boolean = false): Flow<List<DriverPackage>>
     suspend fun resolveDriverUpdates(drivers: List<DriverPackage>): List<DriverPackage>
     suspend fun updateDriver(driver: DriverPackage): Flow<OperationResult>
+    suspend fun deleteDriver(driver: DriverPackage): Flow<OperationResult>
     suspend fun scanPnpDevices(): OperationResult
 }

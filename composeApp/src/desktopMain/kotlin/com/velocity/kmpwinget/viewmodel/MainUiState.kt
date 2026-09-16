@@ -27,6 +27,7 @@ data class MainUiState(
     val systemStats: SystemStats = SystemStats(),
     val packageToConfirmUninstall: Package? = null,
     val batchUninstallConfirm: Boolean = false,
+    val driverToConfirmDelete: DriverPackage? = null,
     val drivers: List<DriverPackage> = emptyList(),
     val displayedDrivers: List<DriverPackage> = emptyList(),
     val driverClassFilter: DriverClass? = null,
