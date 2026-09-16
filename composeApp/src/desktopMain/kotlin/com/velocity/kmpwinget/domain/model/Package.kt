@@ -9,6 +9,19 @@ enum class PackageSource(val displayName: String) {
     UNKNOWN("Unknown");
 
     companion object {
+        fun fromIdAndSource(id: String?, sourceStr: String?): PackageSource {
+            val src = sourceStr?.trim()?.lowercase() ?: ""
+            if (src.contains("winget")) return WINGET
+            if (src.contains("msstore")) return MSSTORE
+
+            val cleanId = id?.trim() ?: ""
+            if (cleanId.startsWith("ARP\\", ignoreCase = true)) return LOCAL
+            if (cleanId.startsWith("MSIX\\", ignoreCase = true)) return MSSTORE
+            if (cleanId.contains(".")) return WINGET
+
+            return LOCAL
+        }
+
         fun fromString(str: String?): PackageSource {
             if (str.isNullOrBlank()) return LOCAL
             val lower = str.trim().lowercase()

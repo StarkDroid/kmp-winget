@@ -68,7 +68,8 @@ object WinGetParser {
                         len
                     }
                     if (start >= end) return null
-                    return line.substring(start, end).trim()
+                    val sub = line.substring(start, end).trim()
+                    return sub.ifBlank { null }
                 }
 
                 val name = getColValue("Name") ?: ""
@@ -80,6 +81,7 @@ object WinGetParser {
                 if (name.isNotEmpty() && id.isNotEmpty()) {
                     val cleanedVersion = sanitizeVersion(rawVersion)
                     val cleanedAvailable = sanitizeVersion(rawAvailable)
+                    val resolvedSource = PackageSource.fromIdAndSource(id, rawSource)
 
                     packages.add(
                         Package(
@@ -87,7 +89,7 @@ object WinGetParser {
                             name = name,
                             version = cleanedVersion,
                             availableVersion = cleanedAvailable,
-                            source = PackageSource.fromString(rawSource),
+                            source = resolvedSource,
                             rawSource = rawSource
                         )
                     )
@@ -161,7 +163,7 @@ object WinGetParser {
                 name = name,
                 version = sanitizeVersion(version),
                 availableVersion = sanitizeVersion(available),
-                source = PackageSource.fromString(source),
+                source = PackageSource.fromIdAndSource(id, source),
                 rawSource = source
             )
         }
