@@ -21,6 +21,8 @@ object WindowsNativeBridge {
 
     private const val DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 = 19
     private const val DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+    private const val DWMWA_CAPTION_COLOR = 35
+    private const val DWMWA_TEXT_COLOR = 36
 
     val isWindows: Boolean
         get() = System.getProperty("os.name", "").contains("Windows", ignoreCase = true)
@@ -87,7 +89,30 @@ object WindowsNativeBridge {
     fun applyTheme(window: Window, isDarkMode: Boolean): Boolean {
         if (!isWindows) return false
         val hwnd = getHWND(window) ?: return false
-        return setDarkModeTitleBar(hwnd, isDarkMode)
+        val darkResult = setDarkModeTitleBar(hwnd, isDarkMode)
+
+        if (isWindows11OrGreater) {
+            try {
+                val captionColor = if (isDarkMode) 0x000F0C0C else 0x00F8F3F1
+                val textColor = if (isDarkMode) 0x00FFFFFF else 0x00271811
+
+                Dwmapi.INSTANCE.DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWA_CAPTION_COLOR,
+                    IntByReference(captionColor).pointer,
+                    4
+                )
+                Dwmapi.INSTANCE.DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWA_TEXT_COLOR,
+                    IntByReference(textColor).pointer,
+                    4
+                )
+            } catch (_: Throwable) {
+                // Non-critical DWM caption theming failure
+            }
+        }
+        return darkResult
     }
 
     fun setDarkModeTitleBar(hwnd: HWND, isDarkMode: Boolean): Boolean {
