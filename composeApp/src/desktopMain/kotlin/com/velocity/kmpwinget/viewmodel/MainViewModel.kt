@@ -17,6 +17,7 @@ import com.velocity.kmpwinget.domain.model.UpdateTask
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import com.velocity.kmpwinget.domain.usecase.BatchOperationUseCase
 import com.velocity.kmpwinget.domain.usecase.GetDriversUseCase
+import com.velocity.kmpwinget.domain.usecase.GetPackageDetailsUseCase
 import com.velocity.kmpwinget.domain.usecase.GetPackagesUseCase
 import com.velocity.kmpwinget.domain.usecase.SystemToolsUseCase
 import com.velocity.kmpwinget.domain.usecase.UninstallPackageUseCase
@@ -38,7 +39,8 @@ class MainViewModel(
     private val systemToolsUseCase: SystemToolsUseCase,
     private val packageRepository: IPackageRepository,
     private val getDriversUseCase: GetDriversUseCase,
-    private val updateDriverUseCase: UpdateDriverUseCase
+    private val updateDriverUseCase: UpdateDriverUseCase,
+    private val getPackageDetailsUseCase: GetPackageDetailsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -50,6 +52,7 @@ class MainViewModel(
     private var localResolutionJob: Job? = null
     private var queueWorkerJob: Job? = null
     private var telemetryJob: Job? = null
+    private var detailsJob: Job? = null
 
     // Authoritative in-memory cache of package ID to available upgrade version
     private val knownUpgradeMap = mutableMapOf<String, String>()
@@ -231,6 +234,19 @@ class MainViewModel(
                         )
                     }
                     loadData(forceRefresh = true)
+                }
+            }
+            is MainUiIntent.InspectPackage -> {
+                inspectPackage(intent.pkg)
+            }
+            is MainUiIntent.DismissPackageDetails -> {
+                detailsJob?.cancel()
+                _uiState.update {
+                    it.copy(
+                        inspectingPackage = null,
+                        packageDetails = null,
+                        isLoadingDetails = false
+                    )
                 }
             }
         }
@@ -630,6 +646,30 @@ class MainViewModel(
                 if (result is OperationResult.Success) {
                     _uiState.update { it.copy(selectedPackageIds = emptySet(), isMultiSelectMode = false) }
                     loadData(forceRefresh = true)
+                }
+            }
+        }
+    }
+
+    private fun inspectPackage(pkg: Package) {
+        detailsJob?.cancel()
+        _uiState.update {
+            it.copy(
+                inspectingPackage = pkg,
+                packageDetails = null,
+                isLoadingDetails = true
+            )
+        }
+        detailsJob = viewModelScope.launch {
+            val details = getPackageDetailsUseCase.execute(pkg)
+            _uiState.update { state ->
+                if (state.inspectingPackage?.id == pkg.id) {
+                    state.copy(
+                        packageDetails = details,
+                        isLoadingDetails = false
+                    )
+                } else {
+                    state
                 }
             }
         }

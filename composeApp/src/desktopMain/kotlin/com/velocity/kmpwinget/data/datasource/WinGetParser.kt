@@ -1,14 +1,9 @@
 package com.velocity.kmpwinget.data.datasource
 
 import com.velocity.kmpwinget.domain.model.Package
+import com.velocity.kmpwinget.domain.model.PackageDetails
 import com.velocity.kmpwinget.domain.model.PackageSource
-
-data class PackageDetails(
-    val id: String,
-    val name: String,
-    val version: String,
-    val publisher: String? = null
-)
+import com.velocity.kmpwinget.domain.model.VersionComparator
 
 object WinGetParser {
 
@@ -122,7 +117,12 @@ object WinGetParser {
             val publisher = publisherLine?.substringAfter(":")?.trim()
 
             if (id.isNotEmpty() && version.isNotEmpty()) {
-                return PackageDetails(id, name, sanitizeVersion(version), publisher)
+                return PackageDetails(
+                    id = id,
+                    name = name,
+                    version = sanitizeVersion(version),
+                    publisher = publisher
+                )
             }
         }
 
@@ -130,10 +130,249 @@ object WinGetParser {
         val table = parseListOutput(output)
         val first = table.firstOrNull()
         if (first != null && first.id.isNotEmpty()) {
-            return PackageDetails(first.id, first.name, first.version, first.publisher)
+            return PackageDetails(
+                id = first.id,
+                name = first.name,
+                version = first.version,
+                publisher = first.publisher
+            )
         }
 
         return null
+    }
+
+    /**
+     * Parses the full output of `winget show` to extract all metadata fields.
+     */
+    fun parseFullPackageDetails(output: String, pkg: Package): PackageDetails {
+        if (output.isBlank()) {
+            return PackageDetails(
+                id = pkg.targetUpgradeId.ifBlank { pkg.id },
+                name = pkg.name,
+                version = pkg.availableVersion ?: pkg.version,
+                installedVersion = pkg.version.ifBlank { null },
+                availableVersion = pkg.availableVersion,
+                hasUpdate = pkg.hasUpdate,
+                publisher = pkg.publisher,
+                description = pkg.description,
+                iconPath = pkg.iconPath,
+                source = pkg.source
+            )
+        }
+
+        var id: String = pkg.targetUpgradeId.ifBlank { pkg.id }
+        var name: String = pkg.name
+        var parsedVersion: String? = null
+        var publisher: String? = pkg.publisher
+        var publisherUrl: String? = null
+        var publisherSupportUrl: String? = null
+        var author: String? = null
+        var moniker: String? = null
+        var description: String? = pkg.description
+        var homepage: String? = null
+        var license: String? = null
+        var licenseUrl: String? = null
+        var copyright: String? = null
+        var releaseDate: String? = null
+        var releaseNotes: String? = null
+        var releaseNotesUrl: String? = null
+        var installerType: String? = null
+        var installerUrl: String? = null
+        var installerSha256: String? = null
+        var architecture: String? = null
+        val tags = mutableListOf<String>()
+
+        val lines = output.lines()
+        var currentMultiLineKey: String? = null
+        val multiLineBuffer = mutableListOf<String>()
+
+        fun flushMultiLine() {
+            val text = multiLineBuffer.joinToString("\n").trim()
+            if (text.isNotEmpty()) {
+                when (currentMultiLineKey) {
+                    "description" -> description = text
+                    "releasenotes" -> releaseNotes = text
+                    "tags" -> {
+                        val parsedTags = multiLineBuffer.map { it.trim() }.filter { it.isNotEmpty() }
+                        tags.addAll(parsedTags)
+                    }
+                }
+            }
+            multiLineBuffer.clear()
+            currentMultiLineKey = null
+        }
+
+        for (rawLine in lines) {
+            val line = rawLine
+            val trimLine = line.trim()
+
+            if (trimLine.isEmpty()) {
+                if (currentMultiLineKey != null) {
+                    multiLineBuffer.add("")
+                }
+                continue
+            }
+
+            // Check header "Found <Name> [<Id>]"
+            if (trimLine.startsWith("Found ", ignoreCase = true) && trimLine.contains("[") && trimLine.contains("]")) {
+                flushMultiLine()
+                val parsedName = trimLine.removePrefix("Found ").substringBefore("[").trim()
+                val parsedId = trimLine.substringAfter("[").substringBefore("]").trim()
+                if (parsedName.isNotEmpty()) name = parsedName
+                if (parsedId.isNotEmpty()) id = parsedId
+                continue
+            }
+
+            // Check known key-value fields
+            when {
+                trimLine.startsWith("Publisher Support Url:", ignoreCase = true) || trimLine.startsWith("Publisher Support URL:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    publisherSupportUrl = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Publisher Url:", ignoreCase = true) || trimLine.startsWith("Publisher URL:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    publisherUrl = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Publisher:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    publisher = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Version:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    parsedVersion = sanitizeVersion(trimLine.substringAfter(":").trim()).ifBlank { null }
+                }
+                trimLine.startsWith("Author:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    author = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Moniker:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    moniker = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Homepage:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    homepage = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("License Url:", ignoreCase = true) || trimLine.startsWith("License URL:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    licenseUrl = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("License:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    license = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Copyright:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    copyright = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Release Notes Url:", ignoreCase = true) || trimLine.startsWith("Release Notes URL:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    releaseNotesUrl = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Release Notes:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    val inline = trimLine.substringAfter(":").trim()
+                    currentMultiLineKey = "releasenotes"
+                    if (inline.isNotEmpty()) multiLineBuffer.add(inline)
+                }
+                trimLine.startsWith("Description:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    val inline = trimLine.substringAfter(":").trim()
+                    currentMultiLineKey = "description"
+                    if (inline.isNotEmpty()) multiLineBuffer.add(inline)
+                }
+                trimLine.startsWith("Tags:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    val inline = trimLine.substringAfter(":").trim()
+                    currentMultiLineKey = "tags"
+                    if (inline.isNotEmpty()) multiLineBuffer.add(inline)
+                }
+                trimLine.startsWith("Installer Type:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    installerType = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Installer Url:", ignoreCase = true) || trimLine.startsWith("Installer URL:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    installerUrl = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Installer SHA256:", ignoreCase = true) ||
+                trimLine.startsWith("Installer SHA-256:", ignoreCase = true) ||
+                trimLine.startsWith("SHA256:", ignoreCase = true) ||
+                trimLine.startsWith("SHA-256:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    installerSha256 = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Release Date:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    releaseDate = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Installer Architecture:", ignoreCase = true) ||
+                trimLine.startsWith("Architecture:", ignoreCase = true) -> {
+                    flushMultiLine()
+                    architecture = trimLine.substringAfter(":").trim().ifBlank { null }
+                }
+                trimLine.startsWith("Documentation:", ignoreCase = true) ||
+                trimLine.startsWith("Installer:", ignoreCase = true) ||
+                trimLine.startsWith("Privacy Url:", ignoreCase = true) ||
+                trimLine.startsWith("Copyright Url:", ignoreCase = true) ||
+                trimLine.startsWith("Purchase Url:", ignoreCase = true) ||
+                trimLine.startsWith("Agreements:", ignoreCase = true) ||
+                trimLine.startsWith("Offline Distribution Supported:", ignoreCase = true) ||
+                trimLine.startsWith("Installer Scope:", ignoreCase = true) ||
+                trimLine.startsWith("Installer Locale:", ignoreCase = true) -> {
+                    flushMultiLine()
+                }
+                else -> {
+                    if (currentMultiLineKey != null) {
+                        multiLineBuffer.add(trimLine)
+                    }
+                }
+            }
+        }
+        flushMultiLine()
+
+        // Infer architecture if not explicitly provided
+        if (architecture.isNullOrBlank()) {
+            val urlOrId = (installerUrl ?: "") + " " + id
+            when {
+                urlOrId.contains("x64", ignoreCase = true) || urlOrId.contains("64-bit", ignoreCase = true) -> architecture = "x64"
+                urlOrId.contains("arm64", ignoreCase = true) -> architecture = "arm64"
+                urlOrId.contains("x86", ignoreCase = true) || urlOrId.contains("32-bit", ignoreCase = true) -> architecture = "x86"
+            }
+        }
+
+        val installedVer = pkg.version.ifBlank { null }
+        val finalAvailVer = pkg.availableVersion ?: if (!parsedVersion.isNullOrBlank() && parsedVersion != installedVer) parsedVersion else null
+        val hasUpdate = pkg.hasUpdate || (finalAvailVer != null && installedVer != null && VersionComparator.isNewer(installedVer, finalAvailVer))
+
+        return PackageDetails(
+            id = id,
+            name = name,
+            version = parsedVersion ?: pkg.version,
+            installedVersion = installedVer,
+            availableVersion = finalAvailVer,
+            hasUpdate = hasUpdate,
+            publisher = publisher ?: pkg.publisher,
+            publisherUrl = publisherUrl,
+            publisherSupportUrl = publisherSupportUrl,
+            author = author,
+            moniker = moniker,
+            description = description ?: pkg.description,
+            homepage = homepage,
+            license = license,
+            licenseUrl = licenseUrl,
+            copyright = copyright,
+            releaseDate = releaseDate,
+            releaseNotes = releaseNotes,
+            releaseNotesUrl = releaseNotesUrl,
+            installerType = installerType,
+            installerUrl = installerUrl,
+            installerSha256 = installerSha256,
+            architecture = architecture,
+            tags = tags.distinct(),
+            iconPath = pkg.iconPath,
+            source = pkg.source
+        )
     }
 
     private fun findColumnStart(header: String, columnName: String): Int? {

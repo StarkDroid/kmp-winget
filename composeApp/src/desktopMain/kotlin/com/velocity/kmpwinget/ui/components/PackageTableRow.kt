@@ -41,6 +41,7 @@ fun PackageTableRow(
     isMultiSelectMode: Boolean,
     isDarkMode: Boolean,
     onSelect: () -> Unit,
+    onInspect: () -> Unit,
     onUpgrade: () -> Unit,
     onUninstall: () -> Unit
 ) {
@@ -75,7 +76,13 @@ fun PackageTableRow(
                 .fillMaxWidth()
                 .background(animatedRowBg)
                 .hoverable(interactionSource)
-                .clickable(enabled = isMultiSelectMode) { onSelect() }
+                .clickable {
+                    if (isMultiSelectMode) {
+                        onSelect()
+                    } else {
+                        onInspect()
+                    }
+                }
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

@@ -37,4 +37,6 @@ sealed interface MainUiIntent {
     data object DismissDriverDeleteConfirm : MainUiIntent
     data object RescanPnpDevices : MainUiIntent
     data class FilterDriversByClass(val driverClass: DriverClass?) : MainUiIntent
+    data class InspectPackage(val pkg: Package) : MainUiIntent
+    data object DismissPackageDetails : MainUiIntent
 }

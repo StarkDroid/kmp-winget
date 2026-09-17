@@ -6,6 +6,7 @@ import com.velocity.kmpwinget.domain.model.DriverPackage
 import com.velocity.kmpwinget.domain.model.NavigationTab
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
+import com.velocity.kmpwinget.domain.model.PackageDetails
 import com.velocity.kmpwinget.domain.model.PackageSortOption
 import com.velocity.kmpwinget.domain.model.SourceFilterOption
 import com.velocity.kmpwinget.domain.model.SystemStats
@@ -31,7 +32,10 @@ data class MainUiState(
     val drivers: List<DriverPackage> = emptyList(),
     val displayedDrivers: List<DriverPackage> = emptyList(),
     val driverClassFilter: DriverClass? = null,
-    val isScanningDrivers: Boolean = false
+    val isScanningDrivers: Boolean = false,
+    val inspectingPackage: Package? = null,
+    val packageDetails: PackageDetails? = null,
+    val isLoadingDetails: Boolean = false
 ) {
     val totalInstalledCount: Int
         get() = allPackages.size

@@ -2,6 +2,7 @@ package com.velocity.kmpwinget.domain.repository
 
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
+import com.velocity.kmpwinget.domain.model.PackageDetails
 import kotlinx.coroutines.flow.Flow
 
 interface IPackageRepository {
@@ -13,4 +14,5 @@ interface IPackageRepository {
     suspend fun upgradeMultiplePackages(packages: List<Package>): Flow<OperationResult>
     suspend fun uninstallMultiplePackages(packages: List<Package>): Flow<OperationResult>
     suspend fun searchWingetStore(query: String): List<Package>
+    suspend fun getPackageDetails(pkg: Package): PackageDetails
 }

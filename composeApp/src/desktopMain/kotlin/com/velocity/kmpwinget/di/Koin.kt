@@ -8,6 +8,7 @@ import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import com.velocity.kmpwinget.domain.repository.ISystemRepository
 import com.velocity.kmpwinget.domain.usecase.BatchOperationUseCase
 import com.velocity.kmpwinget.domain.usecase.GetDriversUseCase
+import com.velocity.kmpwinget.domain.usecase.GetPackageDetailsUseCase
 import com.velocity.kmpwinget.domain.usecase.GetPackagesUseCase
 import com.velocity.kmpwinget.domain.usecase.SystemToolsUseCase
 import com.velocity.kmpwinget.domain.usecase.UninstallPackageUseCase
@@ -31,6 +32,7 @@ val appModule = module {
     single { SystemToolsUseCase(get()) }
     single { GetDriversUseCase(get()) }
     single { UpdateDriverUseCase(get()) }
+    single { GetPackageDetailsUseCase(get()) }
 
     // ViewModel
     viewModel {
@@ -42,7 +44,8 @@ val appModule = module {
             systemToolsUseCase = get(),
             packageRepository = get(),
             getDriversUseCase = get(),
-            updateDriverUseCase = get()
+            updateDriverUseCase = get(),
+            getPackageDetailsUseCase = get()
         )
     }
 }

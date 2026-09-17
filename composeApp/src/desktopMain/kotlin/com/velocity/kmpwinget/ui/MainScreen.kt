@@ -318,6 +318,9 @@ fun MainScreen(
                                                                 MainUiIntent.TogglePackageSelection(pkg.id)
                                                             )
                                                         },
+                                                        onInspect = {
+                                                            viewModel.onIntent(MainUiIntent.InspectPackage(pkg))
+                                                        },
                                                         onUpgrade = {
                                                             viewModel.onIntent(MainUiIntent.RequestUpgrade(pkg))
                                                         },
@@ -383,6 +386,21 @@ fun MainScreen(
                     onDismiss = { viewModel.onIntent(MainUiIntent.DismissQueue) }
                 )
             }
+
+            // Package Details Inspector Drawer (Slide-out from right edge)
+            PackageDetailsDrawer(
+                pkg = uiState.inspectingPackage,
+                details = uiState.packageDetails,
+                isLoading = uiState.isLoadingDetails,
+                isDarkMode = isDarkMode,
+                onDismiss = { viewModel.onIntent(MainUiIntent.DismissPackageDetails) },
+                onUpgrade = { pkgToUpgrade ->
+                    viewModel.onIntent(MainUiIntent.RequestUpgrade(pkgToUpgrade))
+                },
+                onUninstall = { pkgToUninstall ->
+                    viewModel.onIntent(MainUiIntent.RequestUninstall(pkgToUninstall))
+                }
+            )
         }
     }
 }

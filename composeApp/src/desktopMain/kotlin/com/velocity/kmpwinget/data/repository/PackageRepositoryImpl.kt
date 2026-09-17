@@ -6,6 +6,7 @@ import com.velocity.kmpwinget.data.datasource.WindowsRegistryScanner
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageDeduplicator
+import com.velocity.kmpwinget.domain.model.PackageDetails
 import com.velocity.kmpwinget.domain.model.VersionComparator
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import kotlinx.coroutines.Dispatchers
@@ -472,6 +473,26 @@ class PackageRepositoryImpl : IPackageRepository {
         if (query.isBlank()) return@withContext emptyList()
         val result = WinGetExecutor.execute("search", query, "--accept-source-agreements", "--disable-interactivity")
         PackageDeduplicator.deduplicate(WinGetParser.parseListOutput(result.stdout))
+    }
+
+    override suspend fun getPackageDetails(pkg: Package): PackageDetails = withContext(Dispatchers.IO) {
+        try {
+            val targetId = pkg.matchedWingetId ?: pkg.id
+            var result = if (!targetId.startsWith("ARP\\", ignoreCase = true) && targetId.isNotBlank()) {
+                WinGetExecutor.execute("show", "--id", targetId, "--accept-source-agreements", "--disable-interactivity")
+            } else {
+                WinGetExecutor.execute("show", "-q", cleanNameForQuery(pkg.name), "--accept-source-agreements", "--disable-interactivity")
+            }
+
+            if (!result.isSuccess || result.stdout.isBlank() || result.stdout.contains("No package found", ignoreCase = true)) {
+                val cleanName = cleanNameForQuery(pkg.name)
+                result = WinGetExecutor.execute("show", "-q", cleanName, "--accept-source-agreements", "--disable-interactivity")
+            }
+
+            WinGetParser.parseFullPackageDetails(result.stdout, pkg)
+        } catch (_: Throwable) {
+            WinGetParser.parseFullPackageDetails("", pkg)
+        }
     }
 
     private fun cleanNameForQuery(name: String): String {

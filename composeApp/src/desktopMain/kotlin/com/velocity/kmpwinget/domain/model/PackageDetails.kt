@@ -1,0 +1,30 @@
+package com.velocity.kmpwinget.domain.model
+
+data class PackageDetails(
+    val id: String,
+    val name: String,
+    val version: String,
+    val installedVersion: String? = null,
+    val availableVersion: String? = null,
+    val hasUpdate: Boolean = false,
+    val publisher: String? = null,
+    val publisherUrl: String? = null,
+    val publisherSupportUrl: String? = null,
+    val author: String? = null,
+    val moniker: String? = null,
+    val description: String? = null,
+    val homepage: String? = null,
+    val license: String? = null,
+    val licenseUrl: String? = null,
+    val copyright: String? = null,
+    val releaseDate: String? = null,
+    val releaseNotes: String? = null,
+    val releaseNotesUrl: String? = null,
+    val installerType: String? = null,
+    val installerUrl: String? = null,
+    val installerSha256: String? = null,
+    val architecture: String? = null,
+    val tags: List<String> = emptyList(),
+    val iconPath: String? = null,
+    val source: PackageSource = PackageSource.WINGET
+)
