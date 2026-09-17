@@ -143,12 +143,6 @@ fun MainScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth()
                 ) { targetTab ->
                     when (targetTab) {
-                        NavigationTab.SETTINGS -> {
-                            SettingsIsland(
-                                allPackages = uiState.allPackages,
-                                isDarkMode = isDarkMode
-                            )
-                        }
                         NavigationTab.SYSTEM_TOOLS -> {
                             SystemToolsIsland(
                                 stats = uiState.systemStats,

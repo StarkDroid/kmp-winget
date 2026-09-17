@@ -4,8 +4,7 @@ enum class NavigationTab(val title: String) {
     ALL_PACKAGES("All Apps"),
     UPGRADES_AVAILABLE("Updates Available"),
     DRIVERS("Device Drivers"),
-    SYSTEM_TOOLS("System & Maintenance"),
-    SETTINGS("Settings")
+    SYSTEM_TOOLS("System & Maintenance")
 }
 
 enum class PackageSortOption(val displayName: String) {

@@ -419,7 +419,7 @@ class MainViewModel(
             val sourceList = when (state.activeTab) {
                 NavigationTab.ALL_PACKAGES -> state.allPackages
                 NavigationTab.UPGRADES_AVAILABLE -> state.upgradablePackages
-                NavigationTab.SYSTEM_TOOLS, NavigationTab.DRIVERS, NavigationTab.SETTINGS -> emptyList()
+                NavigationTab.SYSTEM_TOOLS, NavigationTab.DRIVERS -> emptyList()
             }
 
             val query = state.searchQuery.trim().lowercase()
