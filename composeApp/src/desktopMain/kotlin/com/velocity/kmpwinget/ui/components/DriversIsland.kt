@@ -13,7 +13,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
@@ -40,6 +39,7 @@ import com.velocity.kmpwinget.theme.AppColors
 import com.velocity.kmpwinget.theme.islandContainer
 import com.velocity.kmpwinget.theme.subtleIslandControl
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DriversIsland(
     drivers: List<DriverPackage>,
@@ -295,21 +295,20 @@ fun DriversIsland(
                     }
                 }
 
-                // Quick Filter Chips Row (All, GPU, Network, Audio, Bluetooth, Chipset, Peripherals)
-                LazyRow(
+                // Quick Filter Chips (All, GPU, Network, Audio, Bluetooth, Chipset, Peripherals)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    item {
-                        DriverChipItem(
-                            label = "All (${drivers.size})",
-                            isSelected = selectedClass == null,
-                            isDarkMode = isDarkMode,
-                            onClick = { onClassFilterChange(null) }
-                        )
-                    }
+                    DriverChipItem(
+                        label = "All (${drivers.size})",
+                        isSelected = selectedClass == null,
+                        isDarkMode = isDarkMode,
+                        onClick = { onClassFilterChange(null) }
+                    )
 
-                    items(DriverClass.entries.toTypedArray()) { driverClass ->
+                    DriverClass.entries.forEach { driverClass ->
                         val count = drivers.count { it.driverClass == driverClass }
                         val label = when (driverClass) {
                             DriverClass.DISPLAY -> "GPU / Display"

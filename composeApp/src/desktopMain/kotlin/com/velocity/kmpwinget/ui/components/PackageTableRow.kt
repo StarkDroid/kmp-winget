@@ -9,6 +9,7 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowForward
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.velocity.kmpwinget.data.datasource.Win32IconLoader
@@ -139,12 +141,12 @@ fun PackageTableRow(
                     maxLines = 1
                 )
 
-                Spacer(Modifier.height(3.dp))
+                Spacer(Modifier.height(4.dp))
 
                 // Line 2: Publisher Name & Tags
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val publisherName = when {
                         !pkg.publisher.isNullOrBlank() -> pkg.publisher
@@ -157,11 +159,12 @@ fun PackageTableRow(
                         Text(
                             text = publisherName,
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 11.sp,
+                                fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Normal,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             ),
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -176,27 +179,39 @@ fun PackageTableRow(
                                 .background(
                                     if (isDarkMode) AppColors.upgradeBadgeBgDark else AppColors.upgradeBadgeBgLight
                                 )
-                                .padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = "Update Ready",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 9.5.sp,
-                                    color = if (isDarkMode) AppColors.upgradeAvailableDark else AppColors.upgradeAvailableLight
+                                    color = if (isDarkMode) AppColors.upgradeAvailableDark else AppColors.upgradeAvailableLight,
+                                    lineHeight = 12.sp
                                 )
                             )
                         }
                     }
 
                     if (!pkg.estimatedSize.isNullOrBlank()) {
-                        Text(
-                            text = "• ${pkg.estimatedSize}",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 10.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(3.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f))
                             )
-                        )
+                            Text(
+                                text = pkg.estimatedSize,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -296,14 +311,15 @@ private fun SourceBadge(source: PackageSource, isDarkMode: Boolean) {
         modifier = Modifier
             .clip(RoundedCornerShape(4.dp))
             .background(bg)
-            .padding(horizontal = 5.dp, vertical = 1.5.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Text(
             text = source.displayName,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 9.5.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = textColor
+                color = textColor,
+                lineHeight = 12.sp
             )
         )
     }

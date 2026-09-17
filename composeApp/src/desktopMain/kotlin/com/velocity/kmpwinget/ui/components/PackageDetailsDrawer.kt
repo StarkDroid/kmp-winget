@@ -755,6 +755,7 @@ private fun PublisherLicenseSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TagsSection(
     tags: List<String>,
@@ -765,11 +766,12 @@ private fun TagsSection(
         icon = Icons.TwoTone.LocalOffer,
         isDarkMode = isDarkMode
     ) {
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            tags.take(6).forEach { tag ->
+            tags.forEach { tag ->
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
