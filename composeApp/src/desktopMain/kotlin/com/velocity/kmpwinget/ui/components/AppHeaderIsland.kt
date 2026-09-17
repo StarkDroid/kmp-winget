@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.ModeNight
@@ -37,7 +36,8 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun AppHeaderIsland(
     isDarkMode: Boolean,
-    wingetVersion: String
+    wingetVersion: String,
+    isWingetAvailable: Boolean = true
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (isDarkMode) 180f else 0f,
@@ -98,22 +98,23 @@ fun AppHeaderIsland(
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(AppColors.upgradeGlow)
+                val isAvailable = isWingetAvailable && wingetVersion != "Not Detected"
+                Text(
+                    text = if (isAvailable) {
+                        "WinGet $wingetVersion • v${BuildConfig.VERSION}"
+                    } else {
+                        "WinGet Not Detected (Error) • v${BuildConfig.VERSION}"
+                    },
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 11.sp,
+                        fontWeight = if (isAvailable) FontWeight.Normal else FontWeight.SemiBold,
+                        color = if (isAvailable) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight
+                        }
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = "WinGet $wingetVersion • v${BuildConfig.VERSION}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
+                )
             }
         }
 

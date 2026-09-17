@@ -112,7 +112,8 @@ fun MainScreen(
                 // Island 1: App Header Island
                 AppHeaderIsland(
                     isDarkMode = isDarkMode,
-                    wingetVersion = uiState.systemStats.wingetVersion
+                    wingetVersion = uiState.systemStats.wingetVersion,
+                    isWingetAvailable = uiState.systemStats.isWingetAvailable
                 )
 
                 // Island 2: Navigation & Controls Island (Tabs with Luminous Underglow + Search/Filters)
