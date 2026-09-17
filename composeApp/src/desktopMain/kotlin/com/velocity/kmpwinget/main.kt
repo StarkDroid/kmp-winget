@@ -22,46 +22,46 @@ import org.koin.compose.koinInject
 import org.koin.core.context.startKoin
 import java.awt.Dimension
 
-fun main() = application {
+fun main() {
     startKoin {
         modules(appModule)
     }
 
-    val viewModel = koinInject<MainViewModel>()
-    val uiState by viewModel.uiState.collectAsState()
-    val isNotchEnabled by FavoritesManager.isNotchEnabled
+    application {
+        val viewModel = koinInject<MainViewModel>()
+        val uiState by viewModel.uiState.collectAsState()
+        val isNotchEnabled by FavoritesManager.isNotchEnabled
 
-    // Floating Quick-Launch Notch Overlay
-    if (isNotchEnabled) {
-        FloatingNotchWindow(
-            allPackages = uiState.allPackages,
-            onDismiss = { FavoritesManager.setNotchEnabled(false) }
+        // Floating Quick-Launch Notch Overlay
+        if (isNotchEnabled) {
+            FloatingNotchWindow(
+                allPackages = uiState.allPackages,
+                onDismiss = { FavoritesManager.setNotchEnabled(false) }
+            )
+        }
+
+        val icon = painterResource(Res.drawable.kmp_winget)
+        val state = rememberWindowState(
+            size = DpSize(960.dp, 800.dp)
         )
-    }
 
-    val icon = painterResource(Res.drawable.kmp_winget)
-    val state = rememberWindowState(
-        size = DpSize(960.dp, 800.dp)
-    )
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = "WinGet Package Manager",
+            icon = icon,
+            resizable = true,
+            state = state
+        ) {
+            LaunchedEffect(window) {
+                window.minimumSize = Dimension(720, 560)
+            }
 
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "WinGet Package Manager",
-        icon = icon,
-        resizable = true,
-        state = state
-    ) {
-        // Enforce minimum window dimension
-        LaunchedEffect(window) {
-            window.minimumSize = Dimension(720, 560)
+            val isDarkMode = ThemeState.isDarkMode.value
+            LaunchedEffect(window, isDarkMode) {
+                WindowsNativeBridge.applyTheme(window, isDarkMode)
+            }
+
+            MainScreen(viewModel = viewModel)
         }
-
-        // Synchronize native Windows title bar with Dark/Light mode
-        val isDarkMode = ThemeState.isDarkMode.value
-        LaunchedEffect(window, isDarkMode) {
-            WindowsNativeBridge.applyTheme(window, isDarkMode)
-        }
-
-        MainScreen(viewModel = viewModel)
     }
 }
