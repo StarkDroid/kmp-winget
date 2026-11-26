@@ -79,10 +79,27 @@ jobs:
               $bumpType = "${{ github.event.inputs.bump_type }}"
               $customVersion = "${{ github.event.inputs.custom_version }}"
 
+              $latestTag = git describe --tags --abbrev=0 2>$null
+              $baseVersion = $currentVersion
+              $currentIsAhead = $false
+              if ($latestTag) {
+                  try {
+                      $latestVersion = [version]$latestTag.TrimStart('v')
+                      $currentVersionObj = [version]$currentVersion
+                      if ($currentVersionObj -gt $latestVersion) {
+                          # The branch already bumped its version ahead of the latest tag.
+                          $baseVersion = $currentVersion
+                          $currentIsAhead = $true
+                      } elseif ($currentVersionObj -lt $latestVersion) {
+                          $baseVersion = $latestTag.TrimStart('v')
+                      }
+                  } catch { }
+              }
+
               if ($bumpType -eq 'custom' -and $customVersion -ne '') {
                   $newVersion = $customVersion.TrimStart('v')
               } elseif ($bumpType -in @('major', 'minor', 'patch')) {
-                  $parts = $currentVersion.Split('.')
+                  $parts = $baseVersion.Split('.')
                   $major = [int]$parts[0]
                   $minor = if ($parts.Length -gt 1) { [int]$parts[1] } else { 0 }
                   $patch = if ($parts.Length -gt 2) { [int]$parts[2] } else { 0 }
@@ -93,14 +110,16 @@ jobs:
                       default { $patch++ }
                   }
                   $newVersion = "$major.$minor.$patch"
+              } elseif ($currentIsAhead) {
+                  # Release the version already prepared on the branch without another bump.
+                  $newVersion = $currentVersion
               } else {
                   # Automatic bump for a merge/push to main, derived from the
                   # conventional prefixes used by the project's commit messages.
-                  $previousTag = git describe --tags --abbrev=0 2>$null
-                  $range = if ($previousTag) { "$previousTag..HEAD" } else { 'HEAD' }
+                  $range = if ($latestTag) { "$latestTag..HEAD" } else { 'HEAD' }
                   $messages = git log $range --pretty=format:"%s"
 
-                  $parts = $currentVersion.Split('.')
+                  $parts = $baseVersion.Split('.')
                   $major = [int]$parts[0]
                   $minor = if ($parts.Length -gt 1) { [int]$parts[1] } else { 0 }
                   $patch = if ($parts.Length -gt 2) { [int]$parts[2] } else { 0 }
@@ -123,7 +142,11 @@ jobs:
                   $newVersion = "$major.$minor.$patch"
               }
 
-              $shouldCommit = if ($env:GITHUB_REF -eq 'refs/heads/main') { 'true' } else { 'false' }
+              if ($currentIsAhead -and $bumpType -eq '') {
+                  $shouldCommit = 'false'
+              } else {
+                  $shouldCommit = if ($env:GITHUB_REF -eq 'refs/heads/main') { 'true' } else { 'false' }
+              }
           }
 
           Write-Host "New version: $newVersion"

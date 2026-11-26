@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
-version = "2.1.0"
+version = "2.2.0"
 
 kotlin {
     jvm("desktop")
