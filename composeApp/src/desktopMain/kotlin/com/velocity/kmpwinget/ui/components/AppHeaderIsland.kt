@@ -28,7 +28,7 @@ import com.velocity.kmpwinget.theme.AppColors
 import com.velocity.kmpwinget.theme.ThemeState
 import com.velocity.kmpwinget.theme.islandContainer
 import com.velocity.kmpwinget.theme.subtleIslandControl
-import com.velocity.kmpwinget.utils.BuildConfig
+import com.velocity.kmpwinget.core.BuildConfig
 import kmp_winget.composeapp.generated.resources.Res
 import kmp_winget.composeapp.generated.resources.kmp_winget
 import org.jetbrains.compose.resources.painterResource
@@ -101,9 +101,9 @@ fun AppHeaderIsland(
                 val isAvailable = isWingetAvailable && wingetVersion != "Not Detected"
                 Text(
                     text = if (isAvailable) {
-                        "WinGet $wingetVersion • v${BuildConfig.VERSION}"
+                        "WinGet $wingetVersion • v${BuildConfig.APP_VERSION}"
                     } else {
-                        "WinGet Not Detected (Error) • v${BuildConfig.VERSION}"
+                        "WinGet Not Detected (Error) • v${BuildConfig.APP_VERSION}"
                     },
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 11.sp,

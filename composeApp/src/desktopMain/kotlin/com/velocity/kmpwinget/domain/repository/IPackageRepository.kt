@@ -13,6 +13,5 @@ interface IPackageRepository {
     suspend fun uninstallPackage(packageId: String, packageName: String): Flow<OperationResult>
     suspend fun upgradeMultiplePackages(packages: List<Package>): Flow<OperationResult>
     suspend fun uninstallMultiplePackages(packages: List<Package>): Flow<OperationResult>
-    suspend fun searchWingetStore(query: String): List<Package>
     suspend fun getPackageDetails(pkg: Package): PackageDetails
 }

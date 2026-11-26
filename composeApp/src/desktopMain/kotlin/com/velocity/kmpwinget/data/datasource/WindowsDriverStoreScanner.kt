@@ -1,15 +1,16 @@
 package com.velocity.kmpwinget.data.datasource
 
 import com.velocity.kmpwinget.domain.model.DriverPackage
+import com.velocity.kmpwinget.platform.WindowsNativeBridge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.nio.charset.StandardCharsets
+import java.nio.charset.Charset
 
-object WindowsDriverScanner {
+object WindowsDriverStoreScanner {
 
-    suspend fun scanDrivers(): List<DriverPackage> = withContext(Dispatchers.IO) {
+    suspend fun scanInstalledDrivers(): List<DriverPackage> = withContext(Dispatchers.IO) {
         if (!WindowsNativeBridge.isWindows) return@withContext emptyList()
 
         try {
@@ -17,11 +18,12 @@ object WindowsDriverScanner {
                 .redirectErrorStream(true)
                 .start()
 
-            val reader = BufferedReader(InputStreamReader(process.inputStream, StandardCharsets.UTF_8))
+            // pnputil writes using the console code page, unlike winget's UTF-8 output.
+            val reader = BufferedReader(InputStreamReader(process.inputStream, Charset.defaultCharset()))
             val lines = reader.readLines()
             process.waitFor()
 
-            parsePnpUtilOutput(lines)
+            if (process.exitValue() == 0) parsePnpUtilOutput(lines) else emptyList()
         } catch (_: Throwable) {
             emptyList()
         }

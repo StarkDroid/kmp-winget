@@ -4,15 +4,34 @@ import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageSource
+import com.velocity.kmpwinget.platform.WindowsNativeBridge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object WindowsRegistryScanner {
 
-    private val UNINSTALL_KEYS = listOf(
-        Pair(WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
-        Pair(WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
-        Pair(WinReg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall")
+    private data class UninstallRoot(
+        val hKey: WinReg.HKEY,
+        val path: String,
+        val idPrefix: String
+    )
+
+    private val UNINSTALL_ROOTS = listOf(
+        UninstallRoot(
+            WinReg.HKEY_LOCAL_MACHINE,
+            "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            "ARP\\Machine\\X64"
+        ),
+        UninstallRoot(
+            WinReg.HKEY_LOCAL_MACHINE,
+            "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            "ARP\\Machine\\X86"
+        ),
+        UninstallRoot(
+            WinReg.HKEY_CURRENT_USER,
+            "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            "ARP\\User"
+        )
     )
 
     suspend fun scanInstalledApps(): List<Package> = withContext(Dispatchers.IO) {
@@ -20,7 +39,9 @@ object WindowsRegistryScanner {
 
         val results = mutableMapOf<String, Package>()
 
-        for ((hKey, path) in UNINSTALL_KEYS) {
+        for (root in UNINSTALL_ROOTS) {
+            val hKey = root.hKey
+            val path = root.path
             try {
                 if (!Advapi32Util.registryKeyExists(hKey, path)) continue
 
@@ -70,11 +91,12 @@ object WindowsRegistryScanner {
                             }
                         } else null
 
-                        val id = "ARP\\Machine\\X64\\$subKey"
+                        val id = "${root.idPrefix}\\$subKey"
+                        val nameKey = name.lowercase()
 
-                        // Deduplicate by name
-                        if (!results.containsKey(name) || (results[name]?.version.isNullOrBlank() && version.isNotBlank())) {
-                            results[name] = Package(
+                        // Deduplicate by normalized display name, preferring an entry with a version.
+                        if (!results.containsKey(nameKey) || (results[nameKey]?.version.isNullOrBlank() && version.isNotBlank())) {
+                            results[nameKey] = Package(
                                 id = id,
                                 name = name,
                                 version = version,

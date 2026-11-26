@@ -3,7 +3,7 @@ package com.velocity.kmpwinget.data.datasource
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageDetails
 import com.velocity.kmpwinget.domain.model.PackageSource
-import com.velocity.kmpwinget.domain.model.VersionComparator
+import com.velocity.kmpwinget.domain.service.VersionComparator
 
 object WinGetParser {
 
@@ -84,8 +84,7 @@ object WinGetParser {
                             name = name,
                             version = cleanedVersion,
                             availableVersion = cleanedAvailable,
-                            source = resolvedSource,
-                            rawSource = rawSource
+                            source = resolvedSource
                         )
                     )
                 } else {
@@ -402,8 +401,7 @@ object WinGetParser {
                 name = name,
                 version = sanitizeVersion(version),
                 availableVersion = sanitizeVersion(available),
-                source = PackageSource.fromIdAndSource(id, source),
-                rawSource = source
+                source = PackageSource.fromIdAndSource(id, source)
             )
         }
         return null

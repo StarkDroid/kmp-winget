@@ -91,7 +91,7 @@ fun OperationDialog(
                         if (isDarkMode) AppColors.dangerRedDark else AppColors.dangerRedLight,
                         false
                     )
-                    else -> Triple(Icons.TwoTone.Info, MaterialTheme.colorScheme.onSurface, false)
+                    OperationResult.Idle -> Triple(Icons.TwoTone.Info, MaterialTheme.colorScheme.onSurface, false)
                 }
 
                 Box(

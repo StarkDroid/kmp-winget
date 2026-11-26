@@ -128,9 +128,7 @@ object WinGetExecutor {
         try {
             var line: String?
             while (reader.readLine().also { line = it } != null) {
-                if (line != null && line!!.isNotBlank()) {
-                    emit(line!!)
-                }
+                line?.takeIf { it.isNotBlank() }?.let { emit(it) }
             }
         } finally {
             reader.close()

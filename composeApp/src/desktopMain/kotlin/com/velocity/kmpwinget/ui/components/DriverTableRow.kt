@@ -248,7 +248,7 @@ private fun DriverClassBadge(driverClass: DriverClass, isDarkMode: Boolean) {
             if (isDarkMode) Color(0xFF3B0764) else Color(0xFFF3E8FF),
             if (isDarkMode) Color(0xFFC084FC) else Color(0xFF9333EA)
         )
-        DriverClass.NET -> Pair(
+        DriverClass.NETWORK -> Pair(
             if (isDarkMode) Color(0xFF064E3B) else Color(0xFFECFDF5),
             if (isDarkMode) Color(0xFF34D399) else Color(0xFF059669)
         )
@@ -297,7 +297,7 @@ private fun getDriverCategoryVisuals(driverClass: DriverClass): Pair<ImageVector
             Icons.TwoTone.Monitor,
             Brush.linearGradient(listOf(Color(0xFF8B5CF6), Color(0xFF6D28D9)))
         )
-        DriverClass.NET -> Pair(
+        DriverClass.NETWORK -> Pair(
             Icons.TwoTone.Wifi,
             Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF047857)))
         )

@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.map
 class GetDriversUseCase(
     private val driverRepository: IDriverRepository
 ) {
+    suspend fun resolveDriverUpdates(drivers: List<DriverPackage>): List<DriverPackage> {
+        return driverRepository.resolveDriverUpdates(drivers)
+    }
+
     fun execute(
         searchQuery: String = "",
         driverClassFilter: DriverClass? = null,

@@ -1,5 +1,7 @@
 package com.velocity.kmpwinget.domain.model
 
+import java.util.concurrent.atomic.AtomicLong
+
 enum class TaskStatus {
     QUEUED,
     IN_PROGRESS,
@@ -8,13 +10,20 @@ enum class TaskStatus {
 }
 
 data class UpdateTask(
+    val id: Long = nextTaskId(),
     val pkg: Package,
     val status: TaskStatus = TaskStatus.QUEUED,
     val progress: Float = 0f,
     val message: String = "Queued",
     val logs: String = "",
     val errorMessage: String? = null
-)
+) {
+    companion object {
+        private val idCounter = AtomicLong(0L)
+
+        fun nextTaskId(): Long = idCounter.incrementAndGet()
+    }
+}
 
 data class BackgroundQueueState(
     val tasks: List<UpdateTask> = emptyList(),

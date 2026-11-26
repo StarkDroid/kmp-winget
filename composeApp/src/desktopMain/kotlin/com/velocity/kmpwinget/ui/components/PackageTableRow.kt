@@ -28,7 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.velocity.kmpwinget.data.datasource.Win32IconLoader
+import com.velocity.kmpwinget.platform.WindowsIconLoader
 import com.velocity.kmpwinget.domain.model.Package
 import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.theme.AppColors
@@ -53,7 +53,7 @@ fun PackageTableRow(
     var appIcon by remember(pkg.iconPath) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(pkg.iconPath) {
         if (!pkg.iconPath.isNullOrBlank()) {
-            appIcon = Win32IconLoader.loadIcon(pkg.iconPath)
+            appIcon = WindowsIconLoader.loadIcon(pkg.iconPath)
         }
     }
 

@@ -23,8 +23,8 @@ data class LiveSystemTelemetry(
 
     val gpuName: String = "Dedicated GPU",
     val gpuUsagePercent: Float = 0f,
-    val gpuTempEstimate: Int? = 45,
-    val vramTotalGb: Double = 8.0,
+    val gpuUsageAvailable: Boolean = false,
+    val vramTotalGb: Double = 0.0,
 
     val downloadSpeedKbps: Double = 0.0,
     val uploadSpeedKbps: Double = 0.0,

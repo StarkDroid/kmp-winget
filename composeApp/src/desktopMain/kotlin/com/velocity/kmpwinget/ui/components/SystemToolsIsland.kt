@@ -149,11 +149,23 @@ fun SystemToolsIsland(
                         TelemetryCard(
                             title = "Graphics (GPU)",
                             name = telemetry.gpuName,
-                            primaryStat = "${telemetry.gpuUsagePercent.toInt()}%",
-                            secondaryStat = "Display Controller",
+                            primaryStat = if (telemetry.gpuUsageAvailable) {
+                                "${telemetry.gpuUsagePercent.toInt()}%"
+                            } else {
+                                "N/A"
+                            },
+                            secondaryStat = if (telemetry.vramTotalGb > 0) {
+                                "${telemetry.vramTotalGb} GB VRAM"
+                            } else {
+                                "Display Controller"
+                            },
                             icon = Icons.TwoTone.VideogameAsset,
-                            progress = (telemetry.gpuUsagePercent / 100f).coerceIn(0.02f, 1f),
-                            badgeText = telemetry.gpuTempEstimate?.let { "~${it}°C" },
+                            progress = if (telemetry.gpuUsageAvailable) {
+                                (telemetry.gpuUsagePercent / 100f).coerceIn(0f, 1f)
+                            } else {
+                                0f
+                            },
+                            badgeText = null,
                             isDarkMode = isDarkMode,
                             accentColor = Color(0xFF10B981)
                         )

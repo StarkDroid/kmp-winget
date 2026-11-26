@@ -1,7 +1,7 @@
 package com.velocity.kmpwinget.domain.usecase
 
 import com.velocity.kmpwinget.domain.model.Package
-import com.velocity.kmpwinget.domain.model.PackageDeduplicator
+import com.velocity.kmpwinget.domain.service.PackageDeduplicator
 import com.velocity.kmpwinget.domain.model.PackageSortOption
 import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.domain.model.SourceFilterOption
@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.map
 class GetPackagesUseCase(
     private val packageRepository: IPackageRepository
 ) {
+    suspend fun resolveUpdatesForLocalPackages(packages: List<Package>): List<Package> {
+        return packageRepository.resolveUpdatesForLocalPackages(packages)
+    }
+
     fun execute(
         showUpgradesOnly: Boolean = false,
         forceRefresh: Boolean = false,

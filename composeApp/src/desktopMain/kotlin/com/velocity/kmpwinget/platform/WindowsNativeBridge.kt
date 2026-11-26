@@ -1,4 +1,4 @@
-package com.velocity.kmpwinget.data.datasource
+package com.velocity.kmpwinget.platform
 
 import com.sun.jna.Library
 import com.sun.jna.Native

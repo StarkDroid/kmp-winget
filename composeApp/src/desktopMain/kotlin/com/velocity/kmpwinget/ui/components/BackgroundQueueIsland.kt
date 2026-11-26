@@ -215,7 +215,7 @@ fun BackgroundQueueIsland(
                                 .fillMaxWidth()
                                 .heightIn(max = 200.dp)
                         ) {
-                            items(queueState.tasks, key = { it.pkg.uniqueId }) { task ->
+                            items(queueState.tasks, key = { it.id }) { task ->
                                 QueueTaskRow(task = task, isDarkMode = isDarkMode)
                             }
                         }

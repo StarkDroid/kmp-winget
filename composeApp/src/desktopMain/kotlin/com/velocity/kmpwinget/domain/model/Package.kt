@@ -1,6 +1,6 @@
 package com.velocity.kmpwinget.domain.model
 
-import java.util.UUID
+import com.velocity.kmpwinget.domain.service.VersionComparator
 
 enum class PackageSource(val displayName: String) {
     WINGET("WinGet"),
@@ -21,17 +21,6 @@ enum class PackageSource(val displayName: String) {
 
             return LOCAL
         }
-
-        fun fromString(str: String?): PackageSource {
-            if (str.isNullOrBlank()) return LOCAL
-            val lower = str.trim().lowercase()
-            return when {
-                lower.contains("winget") -> WINGET
-                lower.contains("msstore") -> MSSTORE
-                lower.contains("local") || lower.contains("arp") -> LOCAL
-                else -> UNKNOWN
-            }
-        }
     }
 }
 
@@ -44,15 +33,12 @@ data class Package(
     val version: String,
     val availableVersion: String? = null,
     val source: PackageSource = PackageSource.WINGET,
-    val rawSource: String? = null,
     val publisher: String? = null,
     val description: String? = null,
     val installDate: String? = null,
     val estimatedSize: String? = null,
-    val isPinned: Boolean = false,
     val matchedWingetId: String? = null,
-    val iconPath: String? = null,
-    val uniqueId: String = UUID.randomUUID().toString()
+    val iconPath: String? = null
 ) {
     val hasUpdate: Boolean
         get() {
@@ -64,11 +50,6 @@ data class Package(
             if (cur.isEmpty() || cur.contains("Unknown", ignoreCase = true) || cur.startsWith("<")) return true
             return VersionComparator.isNewer(cur, avail)
         }
-
-    val cleanId: String
-        get() = id.removePrefix("ARP\\Machine\\X64\\")
-            .removePrefix("ARP\\Machine\\X86\\")
-            .removePrefix("ARP\\User\\")
 
     val targetUpgradeId: String
         get() = matchedWingetId ?: id

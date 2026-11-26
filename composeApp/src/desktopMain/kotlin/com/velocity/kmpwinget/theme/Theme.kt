@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
-import com.velocity.kmpwinget.data.datasource.WindowsNativeBridge
+import com.velocity.kmpwinget.platform.WindowsNativeBridge
 
 val LocalIsDarkMode = compositionLocalOf { false }
 

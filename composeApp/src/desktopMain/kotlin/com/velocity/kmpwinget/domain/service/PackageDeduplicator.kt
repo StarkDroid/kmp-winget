@@ -1,4 +1,7 @@
-package com.velocity.kmpwinget.domain.model
+package com.velocity.kmpwinget.domain.service
+
+import com.velocity.kmpwinget.domain.model.Package
+import com.velocity.kmpwinget.domain.model.PackageSource
 
 object PackageDeduplicator {
 

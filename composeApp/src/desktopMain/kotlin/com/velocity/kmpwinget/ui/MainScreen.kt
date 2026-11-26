@@ -307,7 +307,7 @@ fun MainScreen(
                                             ) {
                                                 items(
                                                     items = uiState.displayedPackages,
-                                                    key = { pkg -> pkg.uniqueId }
+                                                    key = { pkg -> pkg.id }
                                                 ) { pkg ->
                                                     PackageTableRow(
                                                         pkg = pkg,

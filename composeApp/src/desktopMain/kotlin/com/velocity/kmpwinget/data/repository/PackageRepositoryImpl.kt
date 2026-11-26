@@ -5,9 +5,9 @@ import com.velocity.kmpwinget.data.datasource.WinGetParser
 import com.velocity.kmpwinget.data.datasource.WindowsRegistryScanner
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
-import com.velocity.kmpwinget.domain.model.PackageDeduplicator
+import com.velocity.kmpwinget.domain.service.PackageDeduplicator
 import com.velocity.kmpwinget.domain.model.PackageDetails
-import com.velocity.kmpwinget.domain.model.VersionComparator
+import com.velocity.kmpwinget.domain.service.VersionComparator
 import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -368,7 +368,7 @@ class PackageRepositoryImpl : IPackageRepository {
                         pkgSuccess = true
                     }
                 }
-                if (pkgSuccess || combinedLogs.contains("Successfully installed")) {
+                if (pkgSuccess) {
                     succeeded++
                 } else {
                     failed++
@@ -438,7 +438,7 @@ class PackageRepositoryImpl : IPackageRepository {
                         pkgSuccess = true
                     }
                 }
-                if (pkgSuccess || combinedLogs.contains("Successfully uninstalled")) {
+                if (pkgSuccess) {
                     succeeded++
                 } else {
                     failed++
@@ -468,12 +468,6 @@ class PackageRepositoryImpl : IPackageRepository {
             )
         }
     }.flowOn(Dispatchers.IO)
-
-    override suspend fun searchWingetStore(query: String): List<Package> = withContext(Dispatchers.IO) {
-        if (query.isBlank()) return@withContext emptyList()
-        val result = WinGetExecutor.execute("search", query, "--accept-source-agreements", "--disable-interactivity")
-        PackageDeduplicator.deduplicate(WinGetParser.parseListOutput(result.stdout))
-    }
 
     override suspend fun getPackageDetails(pkg: Package): PackageDetails = withContext(Dispatchers.IO) {
         try {

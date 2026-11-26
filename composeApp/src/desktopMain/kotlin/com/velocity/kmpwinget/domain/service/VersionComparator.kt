@@ -1,4 +1,4 @@
-package com.velocity.kmpwinget.domain.model
+package com.velocity.kmpwinget.domain.service
 
 /**
  * Robust semantic and numerical version comparator for Windows software packages.

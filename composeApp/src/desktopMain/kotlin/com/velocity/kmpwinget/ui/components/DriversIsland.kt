@@ -312,7 +312,7 @@ fun DriversIsland(
                         val count = drivers.count { it.driverClass == driverClass }
                         val label = when (driverClass) {
                             DriverClass.DISPLAY -> "GPU / Display"
-                            DriverClass.NET -> "Network"
+                            DriverClass.NETWORK -> "Network"
                             DriverClass.AUDIO -> "Audio"
                             DriverClass.BLUETOOTH -> "Bluetooth"
                             DriverClass.SYSTEM -> "Chipset"
@@ -437,7 +437,7 @@ fun DriversIsland(
                     ) {
                         items(
                             items = displayedDrivers,
-                            key = { driver -> driver.uniqueId }
+                            key = { driver -> driver.publishedName }
                         ) { driver ->
                             DriverTableRow(
                                 driver = driver,

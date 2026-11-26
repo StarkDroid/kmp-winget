@@ -1,4 +1,4 @@
-package com.velocity.kmpwinget.data.datasource
+package com.velocity.kmpwinget.platform
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
@@ -13,7 +13,7 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import javax.swing.filechooser.FileSystemView
 
-object Win32IconLoader {
+object WindowsIconLoader {
 
     private val iconCache = ConcurrentHashMap<String, ImageBitmap>()
     private val fileSystemView: FileSystemView by lazy { FileSystemView.getFileSystemView() }

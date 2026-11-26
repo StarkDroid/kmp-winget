@@ -42,7 +42,6 @@ val appModule = module {
             uninstallPackageUseCase = get(),
             batchOperationUseCase = get(),
             systemToolsUseCase = get(),
-            packageRepository = get(),
             getDriversUseCase = get(),
             updateDriverUseCase = get(),
             getPackageDetailsUseCase = get()

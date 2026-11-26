@@ -3,18 +3,22 @@ package com.velocity.kmpwinget.data.datasource
 import com.sun.jna.Native
 import com.sun.jna.Structure
 import com.sun.jna.platform.win32.Advapi32Util
+import com.sun.jna.platform.win32.IPHlpAPI
 import com.sun.jna.platform.win32.WinBase.FILETIME
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.DWORDLONG
 import com.sun.jna.platform.win32.WinReg
 import com.sun.jna.win32.StdCallLibrary
 import com.velocity.kmpwinget.domain.model.LiveSystemTelemetry
+import com.velocity.kmpwinget.platform.WindowsNativeBridge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.lang.management.ManagementFactory
 import java.net.NetworkInterface
 
 object WindowsHardwareMonitor {
+
+    private const val GPU_MEMORY_VALUE = "HardwareInformation.qwMemorySize"
 
     @Structure.FieldOrder(
         "dwLength",
@@ -53,6 +57,8 @@ object WindowsHardwareMonitor {
     private var prevUserTime: Long = 0L
 
     private var previousNetworkTimestamp: Long = 0L
+    private var previousReceivedBytes: Long = 0L
+    private var previousTransmittedBytes: Long = 0L
 
     val cpuName: String by lazy {
         if (!WindowsNativeBridge.isWindows) return@lazy "Processor"
@@ -103,6 +109,29 @@ object WindowsHardwareMonitor {
         }
     }
 
+    val gpuVramGb: Double by lazy {
+        if (!WindowsNativeBridge.isWindows) return@lazy 0.0
+        try {
+            val classKey = "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}"
+            for (sub in Advapi32Util.registryGetKeys(WinReg.HKEY_LOCAL_MACHINE, classKey)) {
+                val subPath = "$classKey\\$sub"
+                if (Advapi32Util.registryValueExists(WinReg.HKEY_LOCAL_MACHINE, subPath, GPU_MEMORY_VALUE)) {
+                    val bytes = Advapi32Util.registryGetLongValue(
+                        WinReg.HKEY_LOCAL_MACHINE,
+                        subPath,
+                        GPU_MEMORY_VALUE
+                    )
+                    if (bytes > 0) {
+                        return@lazy Math.round((bytes / (1024.0 * 1024.0 * 1024.0)) * 10.0) / 10.0
+                    }
+                }
+            }
+            0.0
+        } catch (_: Throwable) {
+            0.0
+        }
+    }
+
     /**
      * Reads real-time hardware telemetry (CPU %, RAM %, GPU, Network speeds, Uptime).
      */
@@ -146,7 +175,7 @@ object WindowsHardwareMonitor {
 
                     if (total > 0L) {
                         val load = (1.0 - (deltaIdle.toDouble() / total.toDouble())) * 100.0
-                        cpuPercent = (Math.round(load * 10.0) / 10.0).toFloat().coerceIn(1f, 100f)
+                        cpuPercent = (Math.round(load * 10.0) / 10.0).toFloat().coerceIn(0f, 100f)
                     }
                 }
 
@@ -156,11 +185,15 @@ object WindowsHardwareMonitor {
             }
 
             if (cpuPercent <= 0f) {
-                // Fallback estimate
-                cpuPercent = (Math.random() * 8.0 + 3.0).toFloat()
+                // First sample (or GetSystemTimes unavailable): read the OS-wide CPU load.
+                val osBean = ManagementFactory.getOperatingSystemMXBean() as? com.sun.management.OperatingSystemMXBean
+                val osLoad = osBean?.cpuLoad ?: -1.0
+                if (osLoad >= 0.0) {
+                    cpuPercent = (osLoad * 100.0).toFloat().coerceIn(0f, 100f)
+                }
             }
         } catch (_: Throwable) {
-            cpuPercent = 5f
+            cpuPercent = 0f
         }
 
         // 3. Network live speed measurement
@@ -170,20 +203,28 @@ object WindowsHardwareMonitor {
 
         try {
             val now = System.currentTimeMillis()
-            val interfaces = NetworkInterface.getNetworkInterfaces()?.toList() ?: emptyList()
-            for (ni in interfaces) {
-                if (!ni.isLoopback && ni.isUp && !ni.isVirtual) {
-                    primaryAdapterName = ni.displayName.substringBefore("(").trim()
-                    break
-                }
-            }
+            val counters = readNetworkCounters()
+            if (counters != null) {
+                primaryAdapterName = counters.adapterName
+                val received = counters.receivedBytes
+                val transmitted = counters.transmittedBytes
 
-            if (previousNetworkTimestamp > 0 && now > previousNetworkTimestamp) {
-                val simulatedTraffic = Math.random() * 320.0 + 15.0
-                downloadKbps = Math.round(simulatedTraffic * 10.0) / 10.0
-                uploadKbps = Math.round((simulatedTraffic * 0.12) * 10.0) / 10.0
+                if (previousNetworkTimestamp > 0 && now > previousNetworkTimestamp &&
+                    received >= previousReceivedBytes && transmitted >= previousTransmittedBytes
+                ) {
+                    val elapsedSeconds = (now - previousNetworkTimestamp) / 1000.0
+                    downloadKbps = roundOneDecimal(
+                        (received - previousReceivedBytes) * 8.0 / 1000.0 / elapsedSeconds
+                    )
+                    uploadKbps = roundOneDecimal(
+                        (transmitted - previousTransmittedBytes) * 8.0 / 1000.0 / elapsedSeconds
+                    )
+                }
+
+                previousReceivedBytes = received
+                previousTransmittedBytes = transmitted
+                previousNetworkTimestamp = now
             }
-            previousNetworkTimestamp = now
         } catch (_: Throwable) {}
 
         // 4. System Uptime calculation
@@ -216,9 +257,9 @@ object WindowsHardwareMonitor {
             ramUsagePercent = ramPercent.coerceIn(1f, 100f),
 
             gpuName = gpuName,
-            gpuUsagePercent = (Math.random() * 12.0 + (cpuPercent * 0.25)).toFloat().coerceIn(1f, 100f),
-            gpuTempEstimate = (38 + (cpuPercent * 0.3)).toInt().coerceIn(38, 85),
-            vramTotalGb = 16.0,
+            gpuUsagePercent = 0f,
+            gpuUsageAvailable = false,
+            vramTotalGb = gpuVramGb,
 
             downloadSpeedKbps = downloadKbps,
             uploadSpeedKbps = uploadKbps,
@@ -227,6 +268,40 @@ object WindowsHardwareMonitor {
             systemUptime = uptimeStr
         )
     }
+
+    private data class NetworkCounters(
+        val adapterName: String,
+        val receivedBytes: Long,
+        val transmittedBytes: Long
+    )
+
+    private fun readNetworkCounters(): NetworkCounters? {
+        var adapterName = "Network Adapter"
+        var receivedBytes = 0L
+        var transmittedBytes = 0L
+        var found = false
+
+        val interfaces = NetworkInterface.getNetworkInterfaces()?.toList() ?: return null
+        for (ni in interfaces) {
+            if (ni.isLoopback || !ni.isUp || ni.isVirtual) continue
+            if (!found) adapterName = ni.displayName.substringBefore("(").trim()
+
+            try {
+                val row = IPHlpAPI.MIB_IFROW()
+                row.dwIndex = ni.index
+                if (IPHlpAPI.INSTANCE.GetIfEntry(row) == 0) {
+                    receivedBytes += row.dwInOctets.toLong() and 0xFFFFFFFFL
+                    transmittedBytes += row.dwOutOctets.toLong() and 0xFFFFFFFFL
+                    found = true
+                }
+            } catch (_: Throwable) {
+            }
+        }
+
+        return if (found) NetworkCounters(adapterName, receivedBytes, transmittedBytes) else null
+    }
+
+    private fun roundOneDecimal(value: Double): Double = Math.round(value * 10.0) / 10.0
 
     private fun fileTimeToLong(ft: FILETIME): Long {
         return (ft.dwHighDateTime.toLong() shl 32) or (ft.dwLowDateTime.toLong() and 0xFFFFFFFFL)

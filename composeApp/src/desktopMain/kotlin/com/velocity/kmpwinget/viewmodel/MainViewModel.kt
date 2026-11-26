@@ -8,13 +8,12 @@ import com.velocity.kmpwinget.domain.model.DriverPackage
 import com.velocity.kmpwinget.domain.model.NavigationTab
 import com.velocity.kmpwinget.domain.model.OperationResult
 import com.velocity.kmpwinget.domain.model.Package
-import com.velocity.kmpwinget.domain.model.PackageDeduplicator
+import com.velocity.kmpwinget.domain.service.PackageDeduplicator
 import com.velocity.kmpwinget.domain.model.PackageSortOption
 import com.velocity.kmpwinget.domain.model.PackageSource
 import com.velocity.kmpwinget.domain.model.SourceFilterOption
 import com.velocity.kmpwinget.domain.model.TaskStatus
 import com.velocity.kmpwinget.domain.model.UpdateTask
-import com.velocity.kmpwinget.domain.repository.IPackageRepository
 import com.velocity.kmpwinget.domain.usecase.BatchOperationUseCase
 import com.velocity.kmpwinget.domain.usecase.GetDriversUseCase
 import com.velocity.kmpwinget.domain.usecase.GetPackageDetailsUseCase
@@ -40,7 +39,6 @@ class MainViewModel(
     private val uninstallPackageUseCase: UninstallPackageUseCase,
     private val batchOperationUseCase: BatchOperationUseCase,
     private val systemToolsUseCase: SystemToolsUseCase,
-    private val packageRepository: IPackageRepository,
     private val getDriversUseCase: GetDriversUseCase,
     private val updateDriverUseCase: UpdateDriverUseCase,
     private val getPackageDetailsUseCase: GetPackageDetailsUseCase
@@ -414,6 +412,18 @@ class MainViewModel(
                     updateDisplayedDrivers()
                     refreshSystemStats()
                 }
+
+                // Resolve available driver updates through the Windows Update Agent.
+                // The repository caches the WUA search, so repeated refreshes stay cheap.
+                val currentDrivers = _uiState.value.drivers
+                if (currentDrivers.isNotEmpty()) {
+                    val resolvedDrivers = getDriversUseCase.resolveDriverUpdates(currentDrivers)
+                    _uiState.update { state -> state.copy(drivers = resolvedDrivers) }
+                    updateDisplayedDrivers()
+                    refreshSystemStats()
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
             }
         }
@@ -424,7 +434,7 @@ class MainViewModel(
         if (localApps.isEmpty()) return emptyList()
 
         return try {
-            packageRepository.resolveUpdatesForLocalPackages(localApps)
+            getPackagesUseCase.resolveUpdatesForLocalPackages(localApps)
         } catch (_: Exception) {
             emptyList()
         }
@@ -535,7 +545,7 @@ class MainViewModel(
                 // Update task to IN_PROGRESS
                 _uiState.update { state ->
                     val updated = state.backgroundQueue.tasks.map {
-                        if (it.pkg.uniqueId == nextTask.pkg.uniqueId) {
+                        if (it.id == nextTask.id) {
                             it.copy(status = TaskStatus.IN_PROGRESS, message = "Downloading & Installing...")
                         } else it
                     }
@@ -546,13 +556,13 @@ class MainViewModel(
                 val logsBuilder = StringBuilder()
 
                 try {
-                    packageRepository.upgradePackage(nextTask.pkg.id, nextTask.pkg.name, nextTask.pkg.matchedWingetId).collect { result ->
+                    upgradePackageUseCase.execute(nextTask.pkg).collect { result ->
                         when (result) {
                             is OperationResult.Loading -> {
                                 logsBuilder.append(result.logOutput)
                                 _uiState.update { state ->
                                     val updated = state.backgroundQueue.tasks.map {
-                                        if (it.pkg.uniqueId == nextTask.pkg.uniqueId) {
+                                        if (it.id == nextTask.id) {
                                             it.copy(
                                                 progress = result.currentProgress ?: 0.5f,
                                                 message = result.message,
@@ -579,7 +589,7 @@ class MainViewModel(
                 // Mark task as COMPLETED or FAILED
                 _uiState.update { state ->
                     val updated = state.backgroundQueue.tasks.map {
-                        if (it.pkg.uniqueId == nextTask.pkg.uniqueId) {
+                        if (it.id == nextTask.id) {
                             it.copy(
                                 status = if (isTaskSuccess) TaskStatus.COMPLETED else TaskStatus.FAILED,
                                 message = if (isTaskSuccess) "Updated successfully" else "Failed to update",
